@@ -4,7 +4,244 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LOXODROME SPACE</title>
+<style><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOXODROME SPACE</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&family=Syne:wght@400;700;800&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: #03040b;
+  color: #ece4d4;
+  font-family: 'DM Mono', monospace;
+  overflow-x: hidden;
+}
+
+/* HEADER */
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  padding: 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 55%, rgba(196,162,74,0.07) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.spiral-img {
+  position: absolute;
+  width: min(520px, 70vw);
+  opacity: 0.18;
+  pointer-events: none;
+  user-select: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+h1 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(2rem, 7vw, 5.5rem);
+  letter-spacing: 0.12em;
+  color: #ece4d4;
+  margin-bottom: 28px;
+}
+
+.launch-date {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1.1rem, 2.5vw, 1.8rem);
+  color: #c4a24a;
+  letter-spacing: 0.04em;
+  margin-bottom: 64px;
+}
+
+.scroll-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(196,162,74,0.5);
+  animation: fadeFloat 2.4s ease-in-out infinite;
+}
+
+.scroll-hint svg {
+  width: 18px;
+  opacity: 0.5;
+}
+
+@keyframes fadeFloat {
+  0%, 100% { opacity: 0.5; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(6px); }
+}
+
+/* DIVIDER */
+.rule {
+  width: 100%;
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+}
+
+/* SECTION LABEL */
+.label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  color: #c4a24a;
+  text-transform: uppercase;
+  padding: 56px 48px 36px;
+}
+
+/* ART GRID — columns layout, images show fully */
+.art-columns {
+  column-count: 3;
+  column-gap: 3px;
+  padding: 0 3px 3px;
+}
+
+.art-columns .item {
+  break-inside: avoid;
+  margin-bottom: 3px;
+  background: #07081a;
+  overflow: hidden;
+}
+
+.art-columns .item img {
+  width: 100%;
+  height: auto;
+  display: block;
+  opacity: 0.88;
+  transition: opacity 0.4s, transform 0.5s;
+}
+
+.art-columns .item:hover img {
+  opacity: 1;
+  transform: scale(1.02);
+}
+
+/* PROJECT SECTIONS */
+.project {
+  padding: 72px 48px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.project-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 300;
+  font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+  color: #ece4d4;
+  letter-spacing: 0.03em;
+  margin-bottom: 36px;
+}
+
+/* project images: 2 or 3 col grid, images uncropped */
+.project-cols {
+  column-count: 3;
+  column-gap: 3px;
+}
+
+.project-cols .item {
+  break-inside: avoid;
+  margin-bottom: 3px;
+  background: #07081a;
+  overflow: hidden;
+}
+
+.project-cols .item img {
+  width: 100%;
+  height: auto;
+  display: block;
+  opacity: 0.9;
+  transition: opacity 0.4s, transform 0.5s;
+}
+
+.project-cols .item:hover img { opacity: 1; transform: scale(1.02); }
+
+.project-cols.two-col { column-count: 2; }
+
+/* FOOTER */
+footer {
+  padding: 48px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: #46556e;
+}
+
+@media (max-width: 900px) {
+  .art-columns { column-count: 2; }
+  .project-cols { column-count: 2; }
+  .label, .project { padding-left: 24px; padding-right: 24px; }
+}
+
+@media (max-width: 540px) {
+  header { padding: 32px 24px; }
+  .art-columns { column-count: 2; }
+  .project-cols, .project-cols.two-col { column-count: 1; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hero-glow"></div>
+  <img class="spiral-img" src="art/spiralflower_Tasha%20copy.PNG" alt="">
+  <div class="hero-content">
+    <h1>LOXODROME SPACE</h1>
+    <p class="launch-date">Website goes live June 7, 2026</p>
+  </div>
+</header>
+
+<div class="art-columns">
+  <div class="item"><img src="art/MartianArctic_TashaCoelho%20copy.jpg" alt=""></div>
+  <div class="item"><img src="art/spiralflower_Tasha_reborn%20copy.png" alt=""></div>
+  <div class="item"><img src="art/Ocean_Tie_dye_saturn_jup%20copy.png" alt=""></div>
+  <div class="item"><img src="art/SaturnRingsMorphedIntoWaves%20copy.png" alt=""></div>
+  <div class="item"><img src="art/PORTALNov25%20copy.png" alt=""></div>
+  <div class="item"><img src="art/titan_dunes%20copy.png" alt=""></div>
+  <div class="item"><img src="art/neuronsfiring%20copy.jpg" alt=""></div>
+  <div class="item"><img src="art/glow%20copy.png" alt=""></div>
+  <div class="item"><img src="art/synth%20copy.png" alt=""></div>
+  <div class="item"><img src="art/DNA_%20copy.png" alt=""></div>
+  <div class="item"><img src="art/rgb%20copy.png" alt=""></div>
+  <div class="item"><img src="art/havasu%20copy.png" alt=""></div>
+</div>
+
+
+<footer>
+  LOXODROME SPACE &nbsp;·&nbsp; loxodrome.space
+</footer>
+
+</body>
+</html>
+
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&family=Syne:wght@400;700;800&display=swap');
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
