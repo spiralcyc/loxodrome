@@ -3,86 +3,167 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LOXODROME SPACE</title>
-<style><!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LOXODROME SPACE</title>
+<title>Loxodrome Space</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --white: #f0eee8;
+    --dim: #a09890;
+    --black: #000000;
+  }
 
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* Saturn cursor — SVG encoded as data URI */
+  body {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cellipse cx='20' cy='22' rx='8' ry='6' fill='%23c8b88a' stroke='%23a09060' stroke-width='1'/%3E%3Cellipse cx='20' cy='22' rx='16' ry='5' fill='none' stroke='%23c8b88a' stroke-width='1.5' opacity='0.7'/%3E%3Ccircle cx='20' cy='20' r='7' fill='%23c8b88a' stroke='%23a09060' stroke-width='1'/%3E%3C/svg%3E") 20 20, crosshair;
+
+    background: #000;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Starfield canvas */
+  canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .brand {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(2.2rem, 7vw, 6rem);
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    line-height: 1;
+    /* subtle glow */
+    text-shadow:
+      0 0 40px rgba(200, 184, 138, 0.25),
+      0 0 80px rgba(200, 184, 138, 0.08);
+    animation: fadeIn 2s ease forwards;
+    opacity: 0;
+  }
+
+  .divider {
+    margin: 1.6rem auto;
+    width: 120px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--dim), transparent);
+    animation: fadeIn 2.5s ease 0.4s forwards;
+    opacity: 0;
+  }
+
+  .subtext {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    font-weight: 300;
+    color: var(--dim);
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    animation: fadeIn 2.5s ease 0.8s forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="hero-glow"></div>
-  <img class="spiral-img" src="art/spiralflower_Tasha%20copy.PNG" alt="">
-  <div class="hero-content">
-    <h1>LOXODROME SPACE</h1>
-    <p class="launch-date">Website goes live June 8, 2026</p>
-  </div>
-</header>
+<canvas id="stars"></canvas>
 
-<div class="art-columns">
-  <div class="item"><img src="art/MartianArctic_TashaCoelho%20copy.jpg" alt=""></div>
-  <div class="item"><img src="art/spiralflower_Tasha_reborn%20copy.png" alt=""></div>
-  <div class="item"><img src="art/Ocean_Tie_dye_saturn_jup%20copy.png" alt=""></div>
-  <div class="item"><img src="art/SaturnRingsMorphedIntoWaves%20copy.png" alt=""></div>
-  <div class="item"><img src="art/PORTALNov25%20copy.png" alt=""></div>
-  <div class="item"><img src="art/titan_dunes%20copy.png" alt=""></div>
-  <div class="item"><img src="art/neuronsfiring%20copy.jpg" alt=""></div>
-  <div class="item"><img src="art/glow%20copy.png" alt=""></div>
-  <div class="item"><img src="art/synth%20copy.png" alt=""></div>
-  <div class="item"><img src="art/DNA_%20copy.png" alt=""></div>
-  <div class="item"><img src="art/rgb%20copy.png" alt=""></div>
-  <div class="item"><img src="art/havasu%20copy.png" alt=""></div>
+<div class="content">
+  <div class="brand">Loxodrome Space</div>
+  <div class="divider"></div>
+  <div class="subtext">Website goes live June 8th 2026</div>
 </div>
 
+<script>
+  // Starfield
+  const canvas = document.getElementById('stars');
+  const ctx = canvas.getContext('2d');
 
-<footer>
-  LOXODROME SPACE &nbsp;·&nbsp; loxodrome.space
-</footer>
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
 
-</body>
-</html>
+  // Generate stars once
+  const STAR_COUNT = 320;
+  const stars = Array.from({ length: STAR_COUNT }, () => ({
+    x: Math.random(),
+    y: Math.random(),
+    r: Math.random() * 1.4 + 0.2,
+    alpha: Math.random() * 0.7 + 0.15,
+    twinkleSpeed: Math.random() * 0.008 + 0.002,
+    twinkleOffset: Math.random() * Math.PI * 2,
+  }));
 
-</style>
-</head>
-<body>
+  // A handful of larger, slightly warm stars
+  const brightStars = Array.from({ length: 18 }, () => ({
+    x: Math.random(),
+    y: Math.random(),
+    r: Math.random() * 2 + 1.2,
+    alpha: Math.random() * 0.5 + 0.5,
+    twinkleSpeed: Math.random() * 0.005 + 0.001,
+    twinkleOffset: Math.random() * Math.PI * 2,
+    hue: Math.random() > 0.5 ? 'rgba(200,184,138,' : 'rgba(180,210,255,',
+  }));
 
-<header>
-  <div class="hero-glow"></div>
-  <img class="spiral-img" src="art/spiralflower_Tasha%20copy.PNG" alt="">
-  <div class="hero-content">
-    <h1>LOXODROME SPACE</h1>
-    <p class="launch-date">Website goes live June 8, 2026</p>
-  </div>
-</header>
+  let t = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-<div class="rule"></div>
-<p class="label">Work</p>
+    const w = canvas.width, h = canvas.height;
 
-<div class="art-columns">
-  <div class="item"><img src="art/MartianArctic_TashaCoelho%20copy.jpg" alt=""></div>
-  <div class="item"><img src="art/spiralflower_Tasha_reborn%20copy.png" alt=""></div>
-  <div class="item"><img src="art/Ocean_Tie_dye_saturn_jup%20copy.png" alt=""></div>
-  <div class="item"><img src="art/SaturnRingsMorphedIntoWaves%20copy.png" alt=""></div>
-  <div class="item"><img src="art/PORTALNov25%20copy.png" alt=""></div>
-  <div class="item"><img src="art/titan_dunes%20copy.png" alt=""></div>
-  <div class="item"><img src="art/neuronsfiring%20copy.jpg" alt=""></div>
-  <div class="item"><img src="art/glow%20copy.png" alt=""></div>
-  <div class="item"><img src="art/synth%20copy.png" alt=""></div>
-  <div class="item"><img src="art/DNA_%20copy.png" alt=""></div>
-  <div class="item"><img src="art/rgb%20copy.png" alt=""></div>
-  <div class="item"><img src="art/havasu%20copy.png" alt=""></div>
-</div>
+    // Faint stars
+    for (const s of stars) {
+      const a = s.alpha * (0.6 + 0.4 * Math.sin(t * s.twinkleSpeed + s.twinkleOffset));
+      ctx.beginPath();
+      ctx.arc(s.x * w, s.y * h, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(240,238,232,${a})`;
+      ctx.fill();
+    }
 
+    // Bright / warm stars
+    for (const s of brightStars) {
+      const a = s.alpha * (0.7 + 0.3 * Math.sin(t * s.twinkleSpeed + s.twinkleOffset));
+      // soft glow
+      const grad = ctx.createRadialGradient(s.x*w, s.y*h, 0, s.x*w, s.y*h, s.r * 4);
+      grad.addColorStop(0, (s.hue || 'rgba(240,238,232,') + a + ')');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.beginPath();
+      ctx.arc(s.x * w, s.y * h, s.r * 4, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
 
-<footer>
-  LOXODROME SPACE &nbsp;·&nbsp; loxodrome.space
-</footer>
+      ctx.beginPath();
+      ctx.arc(s.x * w, s.y * h, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(240,238,232,${a})`;
+      ctx.fill();
+    }
 
+    t++;
+    requestAnimationFrame(draw);
+  }
+  draw();
+</script>
 </body>
 </html>
