@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mars Arctic Research Station: Regional Geology Toggler &amp; EVA Planner</title>
+<link rel="stylesheet" href="lib/leaflet.min.css">
+<script src="lib/leaflet.min.js"></script>
+<script src="lib/three.min.js"></script>
+<style>
+:root{
+  /* Crew XIX Tiriganiaq patch palette */
+  --bg:#10152a; --panel:#181f38; --panel2:#222b4a; --line:#324067;
+  --txt:#ecdfc3; --dim:#9aa6c6; --acc:#d97b2f; --acc2:#7cc4de; --mag:#c05a9e; --gold:#d4a437; --ok:#7fb069;
+}
+*{box-sizing:border-box; margin:0; padding:0}
+html,body{height:100%; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--txt)}
+#app{display:flex; height:100%}
+#sidebar{width:352px; min-width:352px; background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:1200}
+#map{flex:1; background:#0b0f1f}
+header{padding:12px 14px 10px; border-bottom:2px solid var(--mag); display:flex; gap:10px; align-items:center}
+header img{width:58px; height:58px; flex-shrink:0; filter:drop-shadow(0 0 6px #0008)}
+header h1{font-size:13.5px; letter-spacing:.4px; color:var(--acc); text-transform:uppercase; line-height:1.35}
+header .sub{font-size:10.5px; color:var(--dim); margin-top:2px}
+header .sub b{color:var(--acc2); font-weight:600}
+#tabs{display:flex; border-bottom:1px solid var(--line)}
+#tabs button{flex:1; padding:9px 4px; background:none; border:none; color:var(--dim); font-size:12px; font-weight:600; cursor:pointer; border-bottom:2px solid transparent; text-transform:uppercase; letter-spacing:.4px}
+#tabs button.active{color:var(--acc); border-bottom-color:var(--mag)}
+.tabpane{flex:1; overflow-y:auto; padding:12px 14px; display:none}
+.tabpane.active{display:block}
+.grp{margin-bottom:14px}
+.grp h3{font-size:11px; color:var(--acc2); text-transform:uppercase; letter-spacing:.6px; margin-bottom:6px; border-bottom:1px solid var(--line); padding-bottom:3px}
+.lyr{display:flex; align-items:center; gap:8px; padding:4px 2px; font-size:13px}
+.lyr label{flex:1; cursor:pointer; display:flex; align-items:center; gap:8px}
+.lyr input[type=checkbox],.lyr input[type=radio]{accent-color:var(--acc); width:14px; height:14px; cursor:pointer}
+.lyr input[type=range]{width:64px; accent-color:var(--acc2)}
+.lyr .info-btn{background:none;border:1px solid var(--line);color:var(--dim);border-radius:50%;width:17px;height:17px;font-size:10px;line-height:1;cursor:pointer;flex-shrink:0}
+.lyr .info-btn:hover{color:var(--acc);border-color:var(--acc)}
+.lyr .rm-btn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:13px}
+.lyr .rm-btn:hover{color:#e05555}
+.exagrow{display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--dim); padding:2px 2px 4px 22px}
+.exagrow input[type=range]{flex:1; accent-color:var(--mag)}
+.exagrow .val{color:var(--gold); width:34px; font-weight:700}
+.meta-box{display:none; font-size:11px; color:var(--dim); background:var(--panel2); border-left:2px solid var(--mag); padding:7px 9px; margin:3px 0 6px 22px; border-radius:0 4px 4px 0; line-height:1.5}
+.meta-box.open{display:block}
+button.btn{background:var(--panel2); color:var(--txt); border:1px solid var(--line); border-radius:5px; padding:7px 10px; font-size:12px; cursor:pointer}
+button.btn:hover{border-color:var(--acc); color:var(--acc)}
+button.btn.primary{background:var(--acc); color:#141021; border-color:var(--acc); font-weight:700}
+button.btn.primary:hover{filter:brightness(1.12); color:#141021}
+button.btn.mag{border-color:var(--mag); color:var(--mag)}
+button.btn.mag:hover{background:var(--mag); color:#fff}
+button.btn.sm{padding:4px 8px; font-size:11px}
+.btnrow{display:flex; gap:6px; flex-wrap:wrap; margin:8px 0}
+#tvStats,#simStatus{font-size:12px; background:var(--panel2); border-radius:6px; padding:9px 11px; margin:8px 0; line-height:1.7}
+#tvStats b,#simStatus b{color:var(--acc)}
+#simStatus .clk{color:var(--gold); font-family:'Consolas',monospace; font-size:13px}
+#profile{width:100%; height:130px; background:var(--panel2); border-radius:6px; margin-top:6px}
+#wplist{font-size:11.5px; margin-top:6px; max-height:170px; overflow-y:auto}
+.wprow{display:flex; align-items:center; gap:6px; padding:3px 4px; border-bottom:1px solid var(--line)}
+.wprow .n{color:var(--acc); font-weight:700; width:22px}
+.wprow .c{flex:1; color:var(--dim)}
+.wprow input.stop{width:44px; background:var(--panel); color:var(--gold); border:1px solid var(--line); border-radius:3px; font-size:11px; padding:2px 3px; text-align:right}
+.wprow button{background:none;border:none;color:var(--dim);cursor:pointer;font-size:13px}
+.wprow button:hover{color:#e05555}
+.marginrow{display:flex; align-items:center; gap:8px; font-size:12px; margin:6px 0; color:var(--dim)}
+.marginrow input{flex:1; accent-color:var(--mag)}
+.marginrow .val{color:var(--gold); font-weight:700; width:38px}
+.infoblock{font-size:12.5px; line-height:1.65; color:var(--txt); margin-bottom:14px}
+.infoblock h3{font-size:12px; color:var(--acc2); text-transform:uppercase; letter-spacing:.6px; margin-bottom:5px}
+.infoblock p{margin-bottom:7px}
+.infoblock .src{color:var(--dim); font-size:11px}
+.kv{display:grid; grid-template-columns:auto 1fr; gap:2px 10px; font-size:11.5px; margin:6px 0}
+.kv dt{color:var(--dim)} .kv dd{color:var(--txt)}
+select,input[type=text]{background:var(--panel2); color:var(--txt); border:1px solid var(--line); border-radius:4px; padding:5px 7px; font-size:12px}
+#coordbar{position:absolute; bottom:0; right:0; z-index:1000; background:rgba(16,21,42,.88); color:var(--txt); font:11px/1.4 'Consolas',monospace; padding:4px 10px; border-radius:6px 0 0 0; pointer-events:none}
+.crewwrap{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0}
+.chip{border:1px solid var(--line); border-radius:14px; padding:4px 11px; font-size:12px; cursor:pointer; color:var(--dim); background:var(--panel2); user-select:none}
+.chip.eva{background:var(--acc); border-color:var(--acc); color:#141021; font-weight:700}
+.chip.hab{background:var(--panel2); border-color:var(--acc2); color:var(--acc2)}
+.chip.veh.eva{background:var(--gold); border-color:var(--gold)}
+.crewsum{font-size:11.5px; color:var(--dim); margin:4px 0 8px; line-height:1.6}
+.crewsum b{color:var(--acc)} .crewsum i{color:var(--acc2); font-style:normal}
+.coordadd{display:flex; gap:6px; margin:6px 0}
+.coordadd input{flex:1; font-family:'Consolas',monospace}
+#measureBox{position:absolute; bottom:14px; left:366px; z-index:1300; background:rgba(16,21,42,.94); border:1px solid var(--mag); border-radius:8px; padding:10px 13px; font-size:12px; line-height:1.7; max-width:300px; display:none}
+#measureBox h4{color:var(--mag); font-size:11px; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px}
+#measureBox b{color:var(--gold)}
+#measureBox .btnrow{margin:6px 0 0}
+#measureBox .modebtns{display:flex; gap:4px; margin-bottom:6px}
+#measureBox .modebtns .btn.on{background:var(--mag); color:#fff; border-color:var(--mag)}
+.mapbtn{background:var(--panel) !important; color:var(--txt) !important; font-size:15px !important; line-height:29px !important; text-align:center; cursor:pointer}
+.mapbtn.on{background:var(--mag) !important; color:#fff !important}
+#viz3d{position:fixed; inset:0; z-index:3000; background:#090d1c; display:none; flex-direction:column}
+#viz3d canvas{flex:1; display:block}
+#vizbar{display:flex; gap:12px; align-items:center; padding:8px 14px; background:var(--panel); border-bottom:2px solid var(--mag); font-size:12px; flex-wrap:wrap}
+#vizbar .ttl{color:var(--acc); font-weight:700; text-transform:uppercase; letter-spacing:.5px; font-size:12px}
+#vizbar label{color:var(--dim); display:flex; gap:6px; align-items:center}
+#vizbar input[type=range]{width:100px; accent-color:var(--mag)}
+#vizbar input[type=checkbox]{accent-color:var(--mag)}
+#vizbar .val{color:var(--gold); font-weight:700; min-width:30px}
+#vizbar .btn.on{background:var(--mag); color:#fff; border-color:var(--mag)}
+#vizhint{position:absolute; bottom:12px; left:50%; transform:translateX(-50%); background:rgba(16,21,42,.85); padding:6px 14px; border-radius:16px; font-size:11.5px; color:var(--dim); pointer-events:none}
+.wp-badge{background:var(--acc); color:#141021; border-radius:50%; border:2px solid #fff3; font:700 11px/16px sans-serif; text-align:center}
+.ms-badge{background:var(--mag); color:#fff; border-radius:50%; border:2px solid #fff5; font:700 10px/14px sans-serif; text-align:center}
+.sim-lbl{font:700 10px/1.2 sans-serif; color:#fff; background:rgba(16,21,42,.85); border:1px solid var(--acc); border-radius:6px; padding:1px 5px; white-space:nowrap}
+.hint{font-size:11px; color:var(--dim); font-style:italic; margin:4px 0}
+.mode-on{outline:2px solid var(--mag)}
+.contour-lbl{color:#c9b8a3; font-size:9px; text-shadow:0 0 3px #000}
+.leaflet-container{font-family:inherit}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel); color:var(--txt); box-shadow:0 2px 12px #000a}
+.leaflet-popup-content{font-size:12px; line-height:1.5}
+.leaflet-popup-content b{color:var(--acc)}
+.leaflet-bar a{background:var(--panel); color:var(--txt); border-color:var(--line)}
+.leaflet-bar a:hover{background:var(--panel2)}
+#patchbig{width:150px; float:right; margin:0 0 8px 10px}
+@media(max-width:760px){#app{flex-direction:column}#sidebar{width:100%;min-width:0;height:48%}#measureBox{left:14px}}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="sidebar">
+  <header>
+    <img src="img/patch.png" alt="FMARS Crew XIX Tiriganiaq patch">
+    <div>
+      <h1>Mars Arctic Research Station: Regional Geology Toggler &amp; EVA Planner</h1>
+      <div class="sub">Haughton Crater, Devon Island, Nunavut &middot; <b>Crew XIX Tiriganiaq</b></div>
+    </div>
+  </header>
+  <div id="tabs">
+    <button class="active" data-tab="layers">Layers</button>
+    <button data-tab="traverse">Traverse</button>
+    <button data-tab="info">Region Info</button>
+  </div>
+
+  <div class="tabpane active" id="pane-layers"></div>
+
+  <div class="tabpane" id="pane-traverse">
+    <div class="grp"><h3>EVA Crew Assignment</h3>
+      <div class="hint">Tap a name to toggle: orange = on EVA, blue outline = in habitat. Gold = ATV taken on EVA.</div>
+      <div class="crewwrap" id="crewChips"></div>
+      <div class="crewwrap" id="vehChips"></div>
+      <div class="crewsum" id="crewSum"></div>
+    </div>
+    <div class="grp"><h3>Traverse Planner</h3>
+      <div class="hint">Enable planning mode, then click the map to drop waypoints. Drag markers to adjust; right-click a marker to delete it. Or type coordinates below. Set stop durations (min) per waypoint in the list.</div>
+      <div class="btnrow">
+        <button class="btn primary" id="tvToggle">Start planning</button>
+        <button class="btn" id="tvHab">Start at Hab</button>
+        <button class="btn" id="tvUndo">Undo</button>
+        <button class="btn" id="tvClear">Clear</button>
+      </div>
+      <div class="coordadd">
+        <input type="text" id="coordIn" placeholder="75.4327, -89.8209  or  420829 8373773 (UTM 16N)">
+        <button class="btn" id="coordAdd">Add WP</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;font-size:12px;margin:6px 0">
+        Travel mode:
+        <select id="tvMode">
+          <option value="3.5">EVA on foot (3.5 km/h)</option>
+          <option value="2.2">EVA suited (2.2 km/h)</option>
+          <option value="12">ATV / quad (12 km/h)</option>
+        </select>
+      </div>
+      <div class="marginrow">Time margin <input type="range" id="tvMargin" min="0" max="50" step="5" value="15"><span class="val" id="tvMarginV">15%</span></div>
+      <div id="tvStats">No waypoints yet.</div>
+      <canvas id="profile" width="620" height="260"></canvas>
+      <div id="wplist"></div>
+    </div>
+    <div class="grp"><h3>EVA Simulation</h3>
+      <div class="hint">Animates the EVA crew (and ATVs) along the traverse at the selected travel speed, honoring stop durations. Crew left behind appear at the Hab.</div>
+      <div class="btnrow">
+        <button class="btn primary" id="simStart">Start</button>
+        <button class="btn" id="simReset">Reset</button>
+        <label style="font-size:12px;display:flex;align-items:center;gap:5px">Speed
+          <select id="simSpeed"><option value="30">30x</option><option value="60" selected>60x</option><option value="120">120x</option><option value="300">300x</option></select>
+        </label>
+      </div>
+      <div id="simStatus">Not running.</div>
+    </div>
+    <div class="grp"><h3>Save / Export</h3>
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <input type="text" id="tvName" placeholder="Traverse name..." style="flex:1">
+        <button class="btn" id="tvSave">Save</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <select id="tvSaved" style="flex:1"></select>
+        <button class="btn" id="tvLoad">Load</button>
+        <button class="btn" id="tvDel">&#x2715;</button>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="tvGpx">Export GPX</button>
+        <button class="btn" id="tvGeo">Export GeoJSON</button>
+        <button class="btn mag" id="tvPin">Add to Layers</button>
+      </div>
+      <div class="hint">GPX loads directly into Garmin units &amp; QGIS. "Add to Layers" pins this traverse in the Layers tab. Saved traverses (with crew, ATVs, stops) persist in this browser.</div>
+    </div>
+  </div>
+
+  <div class="tabpane" id="pane-info">
+    <img id="patchbig" src="img/patch.png" alt="Crew XIX Tiriganiaq patch">
+    <div class="infoblock"><h3>Mission</h3>
+      <p>The Flashline Mars Arctic Research Station (FMARS) sits on Haynes Ridge above the northwest rim of the Haughton impact structure. Crew XIX "Tiriganiaq" (Inuktitut for arctic fox) operates simulated Mars EVAs from the habitat on foot and by ATV. This planner combines the mission GIS layers for geology study-site selection and traverse design.</p>
+      <dl class="kv">
+        <dt>FMARS Hab</dt><dd id="habCoord">-</dd>
+        <dt>Crater center (approx)</dt><dd>75.38 N, 89.68 W</dd>
+        <dt>UTM zone</dt><dd>16N (WGS84)</dd>
+        <dt>Elevation range (DEM)</dt><dd>0 to 433 m</dd>
+      </dl>
+    </div>
+    <div class="infoblock"><h3>Formation history</h3>
+      <p>The Haughton impact structure formed about 39 million years ago (late Eocene) when an impactor roughly 2 km across struck the Arctic Platform of Devon Island. The target was a nearly 1.9 km thick sequence of Ordovician and Silurian dolomites and limestones, with minor evaporites and shales, resting on Precambrian gneissic basement. The impact excavated a transient cavity to basement depth and left an apparent crater diameter of about 23 km, with a structurally uplifted center containing shocked basement clasts brought up from more than 1.5 km down.</p>
+      <p>The crater interior is filled with pale grey clast-rich impact melt rock, locally over 100 m thick, whose carbonate melt groundmass makes Haughton unusual among terrestrial craters and a key analog for impacts into volatile-rich targets on Mars. Its badlands-style hills dominate the terrain inside the rim.</p>
+    </div>
+    <div class="infoblock"><h3>Impact hydrothermal system</h3>
+      <p>Impact heating drove a crater-wide hydrothermal system as groundwater circulated through the hot melt sheet and fractured rim. Its fossil record includes vugs and veins of calcite, selenite and fibrous gypsum, marcasite and pyrite bodies, and sulfide-bearing breccias concentrated near the faulted rim, plus discrete vent structures. Eighty vent and hydrothermal localities digitized from the Osinski et al. 2005 map are included as a layer; they are prime EVA sampling targets because equivalent systems on Mars are candidate habitats for past life.</p>
+    </div>
+    <div class="infoblock"><h3>Post-impact record</h3>
+      <p>A lake later occupied the crater and deposited the Miocene Haughton Formation, laminated lacustrine sediments that preserve fossil plants, insects and vertebrates. Quaternary glaciation and continuous permafrost then sculpted the present polar desert: patterned ground, ice wedges, gullied breccia slopes, and seasonal meltwater channels. Stream crossings noted in the GPS survey can change daily during peak melt in July.</p>
+    </div>
+    <div class="infoblock"><h3>Data sources in this map</h3>
+      <p class="src">&bull; Arctic DEM 2m mosaic v4.1 (Polar Geospatial Center): hillshade, elevation tint, 25 m contours, elevation profiles, 3D terrain<br>
+      &bull; Osinski et al. 2005 geological map of the Haughton impact structure (1:25K, georeferenced) and digitized hydrothermal vents<br>
+      &bull; Osinski &amp; Spray 2010 simplified geological map<br>
+      &bull; FMARS 2007 science study-sites overview map (J. Clarke)<br>
+      &bull; GSC surficial geology, western Devon Island (vector polygons)<br>
+      &bull; GSC Bedrock Geology of Canada (national compilation, clipped)<br>
+      &bull; FMARS GPS survey CSV and crew EVA GPS tracks (KML)<br>
+      &bull; Basemaps: Esri World Imagery / OpenTopoMap (online)</p>
+    </div>
+    <div class="infoblock"><h3>Not included</h3>
+      <p class="src">aoi.shp and "BX W SULFIDE" shapefiles are missing their .shp geometry files in the project folder; Canada-wide geophysics grids (200 m magnetics, 2 km gravity) are too coarse to be useful at crater scale.</p>
+    </div>
+  </div>
+</div>
+<div id="map"></div>
+<div id="coordbar">-</div>
+<div id="measureBox">
+  <h4>Measure</h4>
+  <div class="modebtns">
+    <button class="btn sm on" data-mode="path">Path</button>
+    <button class="btn sm" data-mode="poly">Polygon</button>
+    <button class="btn sm" data-mode="circle">Circle</button>
+  </div>
+  <div id="measureBody">Click points on the map.</div>
+  <div class="btnrow"><button class="btn" id="msClear">Clear</button><button class="btn mag" id="msDone">Done</button></div>
+</div>
+</div>
+
+<div id="viz3d">
+  <div id="vizbar">
+    <span class="ttl">3D Terrain</span>
+    <label>Exaggeration <input type="range" id="vzEx" min="1" max="6" step="0.5" value="2.5"><span class="val" id="vzExV">2.5x</span></label>
+    <label>Fly speed <input type="range" id="vzSpd" min="30" max="1200" step="10" value="260"><span class="val" id="vzSpdV">260</span></label>
+    <label>Texture <select id="vzTex"><option value="sat">Satellite (online)</option><option value="tint">Elevation tint</option><option value="hs">Hillshade</option></select></label>
+    <button class="btn on" id="vzExplore">Explore (orbit/pan)</button>
+    <button class="btn" id="vzFree">Free fly</button>
+    <button class="btn" id="vzOrbit">Orbit crater</button>
+    <label><input type="checkbox" id="vzAuto"> Auto-orbit</label>
+    <button class="btn mag" id="vzClose" style="margin-left:auto">Close (Esc)</button>
+  </div>
+  <div id="vizhint"></div>
+</div>
+
+<input type="file" id="fileIn" accept=".gpx,.geojson,.json" style="display:none">
+
+<script src="data/overlays.js"></script>
+<script src="data/gps_points.js"></script>
+<script src="data/vents.js"></script>
+<script src="data/tracks.js"></script>
+<script src="data/surficial.js"></script>
+<script src="data/bedrock.js"></script>
+<script src="data/contours.js"></script>
+<script src="data/elev.js"></script>
+<script>
+/* ================= map & basemaps ================= */
+const map = L.map('map',{zoomControl:true, minZoom:6, maxZoom:17}).setView([75.41,-89.75],11);
+const baseEsri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxNativeZoom:15,maxZoom:17,attribution:'Esri World Imagery'});
+const baseTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxNativeZoom:14,maxZoom:17,attribution:'OpenTopoMap (CC-BY-SA)'});
+const baseOSM  = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'OpenStreetMap'});
+baseEsri.addTo(map);
+L.control.scale({imperial:false}).addTo(map);
+
+/* ================= elevation grid ================= */
+const EG = (()=> {
+  const d = window.DATA_ELEV;
+  const bin = atob(d.b64), n = bin.length/2, a = new Int16Array(n);
+  for(let i=0;i<n;i++){ a[i] = (bin.charCodeAt(2*i) | (bin.charCodeAt(2*i+1)<<8)) << 16 >> 16; }
+  return {a, w:d.w, h:d.h, west:d.west, east:d.east, north:d.north, south:d.south};
+})();
+function elevAt(lat,lon){
+  const fx=(lon-EG.west)/(EG.east-EG.west)*(EG.w-1);
+  const fy=(EG.north-lat)/(EG.north-EG.south)*(EG.h-1);
+  if(fx<0||fy<0||fx>EG.w-1||fy>EG.h-1) return null;
+  const x0=Math.floor(fx), y0=Math.floor(fy), x1=Math.min(x0+1,EG.w-1), y1=Math.min(y0+1,EG.h-1);
+  const v=(x,y)=>EG.a[y*EG.w+x];
+  if(v(x0,y0)<-9000||v(x1,y0)<-9000||v(x0,y1)<-9000||v(x1,y1)<-9000) return null;
+  const tx=fx-x0, ty=fy-y0;
+  return v(x0,y0)*(1-tx)*(1-ty)+v(x1,y0)*tx*(1-ty)+v(x0,y1)*(1-tx)*ty+v(x1,y1)*tx*ty;
+}
+
+/* ================= UTM 16N forward & inverse ================= */
+const _a=6378137,_f=1/298.257223563,_k0=0.9996,_e2=_f*(2-_f),_ep2=_e2/(1-_e2),_lon0=-87*Math.PI/180;
+function toUTM16(lat,lon){
+  const p=lat*Math.PI/180, l=lon*Math.PI/180;
+  const N=_a/Math.sqrt(1-_e2*Math.sin(p)**2), T=Math.tan(p)**2, C=_ep2*Math.cos(p)**2, A=Math.cos(p)*(l-_lon0);
+  const M=_a*((1-_e2/4-3*_e2*_e2/64-5*_e2**3/256)*p-(3*_e2/8+3*_e2*_e2/32+45*_e2**3/1024)*Math.sin(2*p)+(15*_e2*_e2/256+45*_e2**3/1024)*Math.sin(4*p)-(35*_e2**3/3072)*Math.sin(6*p));
+  const E=_k0*N*(A+(1-T+C)*A**3/6+(5-18*T+T*T+72*C-58*_ep2)*A**5/120)+500000;
+  const Nn=_k0*(M+N*Math.tan(p)*(A*A/2+(5-T+9*C+4*C*C)*A**4/24+(61-58*T+T*T+600*C-330*_ep2)*A**6/720));
+  return [Math.round(E),Math.round(Nn)];
+}
+function fromUTM16(E,N){
+  const e1=(1-Math.sqrt(1-_e2))/(1+Math.sqrt(1-_e2));
+  const M=N/_k0, mu=M/(_a*(1-_e2/4-3*_e2*_e2/64-5*_e2**3/256));
+  const p1=mu+(3*e1/2-27*e1**3/32)*Math.sin(2*mu)+(21*e1*e1/16-55*e1**4/32)*Math.sin(4*mu)+(151*e1**3/96)*Math.sin(6*mu)+(1097*e1**4/512)*Math.sin(8*mu);
+  const C1=_ep2*Math.cos(p1)**2, T1=Math.tan(p1)**2, N1=_a/Math.sqrt(1-_e2*Math.sin(p1)**2);
+  const R1=_a*(1-_e2)/Math.pow(1-_e2*Math.sin(p1)**2,1.5), D=(E-500000)/(N1*_k0);
+  const lat=p1-(N1*Math.tan(p1)/R1)*(D*D/2-(5+3*T1+10*C1-4*C1*C1-9*_ep2)*D**4/24+(61+90*T1+298*C1+45*T1*T1-252*_ep2-3*C1*C1)*D**6/720);
+  const lon=_lon0+(D-(1+2*T1+C1)*D**3/6+(5-2*C1+28*T1-3*C1*C1+8*_ep2+24*T1*T1)*D**5/120)/Math.cos(p1);
+  return [lat*180/Math.PI, lon*180/Math.PI];
+}
+map.on('mousemove',e=>{
+  const [E,N]=toUTM16(e.latlng.lat,e.latlng.lng);
+  const el=elevAt(e.latlng.lat,e.latlng.lng);
+  document.getElementById('coordbar').textContent =
+    e.latlng.lat.toFixed(5)+', '+e.latlng.lng.toFixed(5)+'  |  16N '+E+'E '+N+'N'+(el!=null?'  |  '+Math.round(el)+' m':'');
+});
+function hav(a,b){
+  const R=6371000,dLa=(b.lat-a.lat)*Math.PI/180,dLo=(b.lng-a.lng)*Math.PI/180;
+  const q=Math.sin(dLa/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(q));
+}
+const HAB=(()=>{const h=window.DATA_GPS.features.find(f=>/FMARS Hab/i.test(f.properties.name));
+  return h?L.latLng(h.geometry.coordinates[1],h.geometry.coordinates[0]):L.latLng(75.4327,-89.8209);})();
+
+/* ================= layers ================= */
+const B=window.OVERLAY_BOUNDS;
+function img(key,opac){ return L.imageOverlay('img/'+key+'.png', B[key].bounds, {opacity:opac}); }
+
+const surfColors={}; const surfPalette=['#c2a878','#8fb996','#d98e5f','#7fa6c9','#b58bbf','#a3a86b','#d9c25f','#87b8ad','#c98181','#9a9ab0','#c9a2c1','#729e72','#c78d52','#6fa5a0','#b0b06a'];
+let surfIdx=0;
+function surfColor(lbl){ if(!surfColors[lbl]) surfColors[lbl]=surfPalette[surfIdx++%surfPalette.length]; return surfColors[lbl]; }
+const surficialLayer=L.geoJSON(window.DATA_SURFICIAL,{
+  style:f=>({color:'#00000055',weight:.5,fillColor:surfColor(f.properties.ULABEL1||'?'),fillOpacity:.55}),
+  onEachFeature:(f,l)=>{const p=f.properties; l.bindPopup('<b>Surficial unit '+(p.ULABEL1||'?')+'</b><br>'+(p.UTYPE1||'')+(p.USUBCAT1?' : '+p.USUBCAT1:'')+(p.EVENT1?'<br>Event: '+p.EVENT1:'')+(p.REMARKS?'<br><i>'+p.REMARKS+'</i>':''));}
+});
+const bedrockLayer=L.geoJSON(window.DATA_BEDROCK,{
+  style:f=>{const per=f.properties.PERIOD||''; const c={'Ordovician':'#4a90a4','Silurian':'#7fb069','Devonian':'#c98a4b','Cambrian':'#8e7cc3','Tertiary':'#d9c25f','Quaternary':'#cccccc'}[per]||'#9aa6c6'; return {color:'#00000066',weight:1,fillColor:c,fillOpacity:.45};},
+  onEachFeature:(f,l)=>{const p=f.properties; l.bindPopup('<b>'+(p.UNIT||'Bedrock unit')+'</b><br>'+[p.ERA,p.PERIOD,p.EPOCH].filter(x=>x).join(' / ')+(p.DOMAIN?'<br>Domain: '+p.DOMAIN:''));}
+});
+const contourLayer=L.geoJSON(window.DATA_CONTOURS,{
+  style:f=>({color:f.properties.elev%100===0?'#e0b070':'#9aa6c6',weight:f.properties.elev%100===0?1.3:.6,opacity:.75}),
+  onEachFeature:(f,l)=>l.bindTooltip(f.properties.elev+' m',{sticky:true,className:'contour-lbl'})
+});
+const ventIcon=L.divIcon({className:'',html:'<div style="width:10px;height:10px;background:#e05555;border:1.5px solid #fff;border-radius:50%;box-shadow:0 0 4px #e05555"></div>',iconSize:[10,10],iconAnchor:[5,5]});
+const ventsLayer=L.geoJSON(window.DATA_VENTS,{
+  pointToLayer:(f,ll)=>L.marker(ll,{icon:ventIcon}),
+  onEachFeature:(f,l)=>l.bindPopup('<b>Hydrothermal vent #'+f.properties.id+'</b><br>Digitized from Osinski et al. 2005 map')
+});
+const INFRA_RE=/hab$|hab |windmill|generator|incinerator|tripod|windsock|data logger|cairn/i;
+const infraGlyph=n=>{
+  if(/hab/i.test(n)) return ['&#x2302;','#d97b2f',19];
+  if(/generator/i.test(n)) return ['&#x26A1;','#d4a437',15];
+  if(/incinerator/i.test(n)) return ['&#x1F525;','#e05555',14];
+  if(/windmill|windsock/i.test(n)) return ['&#x2739;','#7cc4de',15];
+  if(/data logger/i.test(n)) return ['&#x25A3;','#c05a9e',14];
+  if(/tripod/i.test(n)) return ['&#x25B3;','#ecdfc3',14];
+  if(/cairn/i.test(n)) return ['&#x25B2;','#9aa6c6',13];
+  return ['&#x25CF;','#d97b2f',13];
+};
+function infraIcon(name){
+  const [g,c,s]=infraGlyph(name);
+  return L.divIcon({className:'',html:'<div style="color:'+c+';font-size:'+s+'px;text-shadow:0 0 4px #000,0 0 8px #000">'+g+'</div>',iconSize:[s+4,s+4],iconAnchor:[(s+4)/2,(s+4)/2]});
+}
+function fieldIcon(name){
+  let c='#7cc4de', s='&#x25CF;';
+  if(/landing/i.test(name)) c='#d4a437';
+  else if(/eva|traverse/i.test(name)) c='#7fb069';
+  else if(/sample|outcrop|stromatolite|chimney|ice|patterned/i.test(name)) c='#c98af0';
+  else if(/crossing|junction|track/i.test(name)) c='#9aa6c6';
+  return L.divIcon({className:'',html:'<div style="color:'+c+';font-size:13px;text-shadow:0 0 3px #000">'+s+'</div>',iconSize:[14,14],iconAnchor:[7,7]});
+}
+function gpsPopup(f,l){
+  const p=f.properties; const el=elevAt(l.getLatLng().lat,l.getLatLng().lng);
+  l.bindPopup('<b>'+p.name+'</b><br>UTM 16N: '+p.easting+'E '+p.northing+'N'+(el!=null?'<br>Elev approx '+Math.round(el)+' m':''));
+  l.bindTooltip(p.name,{direction:'top',offset:[0,-6]});
+}
+const infraFC={type:'FeatureCollection',features:window.DATA_GPS.features.filter(f=>INFRA_RE.test(f.properties.name))};
+const fieldFC={type:'FeatureCollection',features:window.DATA_GPS.features.filter(f=>!INFRA_RE.test(f.properties.name))};
+const infraLayer=L.geoJSON(infraFC,{pointToLayer:(f,ll)=>L.marker(ll,{icon:infraIcon(f.properties.name)}),onEachFeature:gpsPopup});
+const fieldLayer=L.geoJSON(fieldFC,{pointToLayer:(f,ll)=>L.marker(ll,{icon:fieldIcon(f.properties.name)}),onEachFeature:gpsPopup});
+const trackColors={'Crater EVA':'#e05555','Stream/Water EVA':'#5ba8f0'};
+const tracksLayer=L.geoJSON(window.DATA_TRACKS,{
+  style:f=>({color:trackColors[f.properties.track]||'#e0b070',weight:2.5,opacity:.85,dashArray:'6 3'}),
+  pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:4,color:'#fff',weight:1,fillColor:trackColors[f.properties.track],fillOpacity:1}),
+  onEachFeature:(f,l)=>l.bindPopup('<b>'+f.properties.name+'</b><br>'+f.properties.track+' (crew GPS log)')
+});
+
+/* dynamic hillshade with exaggeration */
+const hillshadeLayer=img('hillshade',0.7);
+let dynHS=null;
+function metersPerCell(){
+  const latM=(EG.north-EG.south)*110950/EG.h;
+  const lonM=(EG.east-EG.west)*111320*Math.cos(75.4*Math.PI/180)/EG.w;
+  return [lonM,latM];
+}
+function renderDynHS(ex){
+  const [dx,dy]=metersPerCell();
+  const cv=document.createElement('canvas'); cv.width=EG.w; cv.height=EG.h;
+  const ctx=cv.getContext('2d'), im=ctx.createImageData(EG.w,EG.h);
+  const az=315*Math.PI/180, alt=45*Math.PI/180;
+  const lx=Math.sin(az)*Math.cos(alt), ly=Math.cos(az)*Math.cos(alt), lz=Math.sin(alt);
+  for(let y=0;y<EG.h;y++)for(let x=0;x<EG.w;x++){
+    const i=y*EG.w+x, o=i*4, v=EG.a[i];
+    if(v<-9000){im.data[o+3]=0; continue;}
+    const xm=Math.max(0,x-1),xp=Math.min(EG.w-1,x+1),ym=Math.max(0,y-1),yp=Math.min(EG.h-1,y+1);
+    const e=(a)=>a<-9000?v:a;
+    const gx=(e(EG.a[y*EG.w+xp])-e(EG.a[y*EG.w+xm]))*ex/((xp-xm)*dx);
+    const gy=(e(EG.a[yp*EG.w+x])-e(EG.a[ym*EG.w+x]))*ex/((yp-ym)*dy);
+    let nx=-gx,ny=gy,nz=1; const nl=Math.hypot(nx,ny,nz);
+    let s=(nx*lx+ny*ly+nz*lz)/nl; s=Math.max(0,Math.min(1,(s+0.08)/1.08));
+    const c=Math.round(s*255);
+    im.data[o]=c; im.data[o+1]=c; im.data[o+2]=c; im.data[o+3]=255;
+  }
+  ctx.putImageData(im,0,0);
+  return cv.toDataURL('image/png');
+}
+let hsChk=null;
+function setHSExag(ex){
+  /* auto-enable the hillshade layer so the slider always shows an effect */
+  if(hsChk && !hsChk.checked){ hsChk.checked=true; hsChk.dispatchEvent(new Event('change')); }
+  if(Math.abs(ex-1)<0.01){
+    if(dynHS){map.removeLayer(dynHS); dynHS=null;}
+    if(hsChk && hsChk.checked && !map.hasLayer(hillshadeLayer)) hillshadeLayer.addTo(map);
+    return;
+  }
+  const url=renderDynHS(ex);
+  if(map.hasLayer(hillshadeLayer)) map.removeLayer(hillshadeLayer);
+  const bounds=[[EG.south,EG.west],[EG.north,EG.east]];
+  if(!dynHS){dynHS=L.imageOverlay(url,bounds,{opacity:hillshadeLayer.options.opacity});
+    if(hsChk && hsChk.checked) dynHS.addTo(map);}
+  else dynHS.setUrl(url);
+}
+const hsProxy={
+  addTo:m=>{(dynHS||hillshadeLayer).addTo(m); return hsProxy;},
+  remove:()=>{if(dynHS)map.removeLayer(dynHS); if(map.hasLayer(hillshadeLayer))map.removeLayer(hillshadeLayer);},
+  setOpacity:o=>{hillshadeLayer.setOpacity(o); if(dynHS)dynHS.setOpacity(o);},
+  options:{opacity:0.7}
+};
+
+const LAYERS=[
+ {grp:'Base imagery',items:[
+   {name:'Esri satellite', layer:baseEsri, on:true, radio:true, meta:'Esri World Imagery web tiles (online).'},
+   {name:'OpenTopoMap', layer:baseTopo, radio:true, meta:'Topographic web basemap (online).'},
+   {name:'OpenStreetMap', layer:baseOSM, radio:true, meta:'Standard OSM basemap (online).'}]},
+ {grp:'Terrain (Arctic DEM 2m)',items:[
+   {name:'Hillshade', layer:hsProxy, opac:true, exag:true, meta:'Shaded relief from the Arctic DEM 2m mosaic v4.1 (Polar Geospatial Center), sun az 315 alt 45. Moving the exaggeration slider turns the layer on and re-renders the shading with vertical exaggeration; from top-down this reads as deeper shadows. For tilted views use the 3D button on the map: Explore mode gives orbit, pan and zoom, and Orbit crater spins around the structure.'},
+   {name:'Elevation tint', layer:img('elevtint',0.65), opac:true, meta:'Hypsometric color ramp 0 to 450 m blended with hillshade, from the same Arctic DEM tile.'},
+   {name:'Contours (25 m)', layer:contourLayer, meta:'Generated from smoothed Arctic DEM; index contours every 100 m shown heavier. Labels on hover.'}]},
+ {grp:'Geology: scanned maps',items:[
+   {name:'Osinski 2005 geol. map + vents', layer:img('geo2005',0.75), opac:true, meta:'Georeferenced 1:25K geological map of the Haughton impact structure incl. hydrothermal vent localities (Osinski et al. 2005, MAPS 40).'},
+   {name:'Osinski 2010 simplified map', layer:img('geo2010',0.75), opac:true, meta:'Simplified geological map of the Haughton impact structure (Osinski and Spray, 2010 compilation), georeferenced.'},
+   {name:'FMARS 2007 study sites', layer:img('sites2007',0.8), opac:true, meta:'FMARS 2007 long-duration mission science study-sites overview map (Jon Clarke), georeferenced to UTM 16N.'}]},
+ {grp:'Geology: vector',items:[
+   {name:'Surficial geology (GSC)', layer:surficialLayer, meta:'Surficial geology of western Devon Island (Geological Survey of Canada), clipped to the crater region. Click a polygon for unit label, type and depositional event.'},
+   {name:'Bedrock geology (GSC national)', layer:bedrockLayer, meta:'Bedrock Geology of Canada national compilation, clipped. Coarse; use the Osinski maps for crater-scale geology. Click for unit and era.'},
+   {name:'Hydrothermal vents (80)', layer:ventsLayer, meta:'80 vent and hydrothermal localities digitized from the Osinski et al. 2005 map (UTM 16N shapefile).'}]},
+ {grp:'Station & operations',items:[
+   {name:'FMARS habitat & infrastructure', layer:infraLayer, meta:'Station assets from the GPS survey: Hab (house symbol), generator shed, incinerator, windmill, windsock, tripod, cairn, and data logger stations A, B, C. Hover for names, click for UTM coordinates.'},
+   {name:'Field waypoints', layer:fieldLayer, meta:'Field waypoints from the GPS survey: landing strip corners (gold), EVA starts and ends (green), science targets such as samples, outcrops, patterned ground and the stromatolite boulder (purple), track junctions and creek crossings (blue-grey).'},
+   {name:'Previous EVA tracks', layer:tracksLayer, meta:'Crew GPS logs: crater EVA (red dashed) and stream and water EVA (blue dashed), thinned from raw KML activity files.'}]}
+];
+
+const pane=document.getElementById('pane-layers');
+LAYERS.forEach(g=>{
+  const div=document.createElement('div'); div.className='grp';
+  div.innerHTML='<h3>'+g.grp+'</h3>';
+  g.items.forEach(it=>{
+    const row=document.createElement('div'); row.className='lyr';
+    const id='ly'+Math.random().toString(36).slice(2,8);
+    const type=g.items[0].radio?'radio':'checkbox';
+    row.innerHTML='<label><input type="'+type+'" '+(g.items[0].radio?'name="base"':'')+' id="'+id+'" '+(it.on?'checked':'')+'>'+it.name+'</label>'+
+      (it.opac?'<input type="range" min="0" max="100" value="'+Math.round((it.layer.options.opacity||1)*100)+'" title="opacity">':'')+
+      '<button class="info-btn" title="metadata">i</button>';
+    const meta=document.createElement('div'); meta.className='meta-box'; meta.textContent=it.meta;
+    div.appendChild(row);
+    if(it.exag){
+      hsChk=row.querySelector('input');
+      const ex=document.createElement('div'); ex.className='exagrow';
+      ex.innerHTML='Exaggeration <input type="range" min="1" max="5" step="0.5" value="1"><span class="val">1x</span>';
+      const rng=ex.querySelector('input');
+      rng.addEventListener('input',()=>{ex.querySelector('.val').textContent=rng.value+'x'; setHSExag(parseFloat(rng.value));});
+      div.appendChild(ex);
+    }
+    div.appendChild(meta);
+    if(it.on) it.layer.addTo(map);
+    row.querySelector('input[type='+type+']').addEventListener('change',e=>{
+      if(g.items[0].radio){ g.items.forEach(o=>map.removeLayer(o.layer)); it.layer.addTo(map); }
+      else e.target.checked ? it.layer.addTo(map) : (it.layer.remove?it.layer.remove():map.removeLayer(it.layer));
+    });
+    const rng=row.querySelector('input[type=range]');
+    if(rng) rng.addEventListener('input',e=>it.layer.setOpacity(e.target.value/100));
+    row.querySelector('.info-btn').addEventListener('click',()=>meta.classList.toggle('open'));
+  });
+  pane.appendChild(div);
+});
+
+/* ---- user traverse / EVA log layers ---- */
+const userGrp=document.createElement('div'); userGrp.className='grp';
+userGrp.innerHTML='<h3>My traverses & EVA logs</h3><div id="userLayers"></div>'+
+  '<div class="btnrow"><button class="btn sm" id="importBtn">Import GPX / GeoJSON</button></div>'+
+  '<div class="hint">Pin planned traverses here from the Traverse tab, or import post-EVA GPS logs (GPX from Garmin, or GeoJSON).</div>';
+pane.appendChild(userGrp);
+let userLayerN=0;
+function addUserLayer(name, layer){
+  userLayerN++;
+  layer.addTo(map);
+  const row=document.createElement('div'); row.className='lyr';
+  row.innerHTML='<label><input type="checkbox" checked>'+name+'</label><button class="rm-btn" title="remove">&#x2715;</button>';
+  row.querySelector('input').addEventListener('change',e=>e.target.checked?layer.addTo(map):map.removeLayer(layer));
+  row.querySelector('.rm-btn').addEventListener('click',()=>{map.removeLayer(layer); row.remove();});
+  document.getElementById('userLayers').appendChild(row);
+}
+document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('fileIn').click());
+document.getElementById('fileIn').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      let layer=null, dist=0;
+      if(/\.gpx$/i.test(f.name)){
+        const doc=new DOMParser().parseFromString(rd.result,'text/xml');
+        const pts=[...doc.getElementsByTagName('trkpt')].map(p=>[+p.getAttribute('lat'),+p.getAttribute('lon')]);
+        const wpts=[...doc.getElementsByTagName('wpt')].map(p=>({ll:[+p.getAttribute('lat'),+p.getAttribute('lon')],name:(p.getElementsByTagName('name')[0]||{}).textContent||'wpt'}));
+        const items=[];
+        if(pts.length>1){
+          for(let i=1;i<pts.length;i++) dist+=hav(L.latLng(pts[i-1]),L.latLng(pts[i]));
+          items.push(L.polyline(pts,{color:'#d4a437',weight:3,opacity:.9}).bindPopup('<b>'+f.name+'</b><br>'+(dist/1000).toFixed(2)+' km'));
+        }
+        wpts.forEach(w=>items.push(L.circleMarker(w.ll,{radius:5,color:'#fff',weight:1,fillColor:'#d4a437',fillOpacity:1}).bindTooltip(w.name)));
+        if(!items.length) throw new Error('No track points or waypoints found');
+        layer=L.layerGroup(items);
+        if(pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.3));
+      } else {
+        const gj=JSON.parse(rd.result);
+        layer=L.geoJSON(gj,{style:{color:'#d4a437',weight:3},pointToLayer:(ft,ll)=>L.circleMarker(ll,{radius:5,color:'#fff',weight:1,fillColor:'#d4a437',fillOpacity:1}),
+          onEachFeature:(ft,l)=>{if(ft.properties&&ft.properties.name)l.bindTooltip(String(ft.properties.name));}});
+        try{map.fitBounds(layer.getBounds().pad(0.3));}catch(_){}
+      }
+      addUserLayer(f.name.replace(/\.(gpx|geojson|json)$/i,''), layer);
+    }catch(err){alert('Could not read file: '+err.message);}
+  };
+  rd.readAsText(f);
+  e.target.value='';
+});
+
+/* tabs */
+document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tabpane').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); document.getElementById('pane-'+b.dataset.tab).classList.add('active');
+}));
+document.getElementById('habCoord').textContent=HAB.lat.toFixed(5)+' N, '+(-HAB.lng).toFixed(5)+' W';
+
+/* ================= crew & vehicles ================= */
+const CREW=['Trevor','Laura','Rand','Adrian','Anderson'];
+const VEHICLES=['ATV-1','ATV-2','ATV-3'];
+const crewState={}; CREW.forEach(n=>crewState[n]='hab');
+const vehState={}; VEHICLES.forEach(n=>vehState[n]='hab');
+function renderCrew(){
+  const wrap=document.getElementById('crewChips'); wrap.innerHTML='';
+  CREW.forEach(n=>{
+    const c=document.createElement('span'); c.className='chip '+crewState[n]; c.textContent=n;
+    c.addEventListener('click',()=>{crewState[n]=crewState[n]==='eva'?'hab':'eva'; renderCrew();});
+    wrap.appendChild(c);
+  });
+  const vwrap=document.getElementById('vehChips'); vwrap.innerHTML='';
+  VEHICLES.forEach(n=>{
+    const c=document.createElement('span'); c.className='chip veh '+vehState[n]; c.textContent=n;
+    c.addEventListener('click',()=>{vehState[n]=vehState[n]==='eva'?'hab':'eva'; renderCrew();});
+    vwrap.appendChild(c);
+  });
+  const eva=CREW.filter(n=>crewState[n]==='eva'), habC=CREW.filter(n=>crewState[n]==='hab');
+  const atv=VEHICLES.filter(n=>vehState[n]==='eva');
+  document.getElementById('crewSum').innerHTML=
+    '<b>On EVA ('+eva.length+'):</b> '+(eva.join(', ')||'nobody yet')+(atv.length?' &middot; with '+atv.join(', '):'')+
+    '<br><i>Habitat ('+habC.length+'):</i> '+(habC.join(', ')||'nobody');
+  if(typeof stats==='function') try{stats();}catch(_){ }
+}
+renderCrew();
+
+/* ================= traverse planner ================= */
+const TV={pts:[], stops:[], markers:[], line:null, active:false};
+const tvLine=()=>TV.pts.map(p=>[p.lat,p.lng]);
+function redraw(){
+  if(TV.line) map.removeLayer(TV.line);
+  if(TV.pts.length>1) TV.line=L.polyline(tvLine(),{color:'#d97b2f',weight:3.5,opacity:.95}).addTo(map);
+  TV.markers.forEach(m=>map.removeLayer(m)); TV.markers=[];
+  TV.pts.forEach((p,i)=>{
+    const m=L.marker(p,{draggable:true,icon:L.divIcon({className:'wp-badge',html:String(i+1),iconSize:[20,20],iconAnchor:[10,10]})}).addTo(map);
+    m.on('drag',e=>{TV.pts[i]=e.target.getLatLng(); if(TV.line) TV.line.setLatLngs(tvLine()); stats(true);});
+    m.on('dragend',redraw);
+    m.on('contextmenu',()=>{TV.pts.splice(i,1); TV.stops.splice(i,1); redraw();});
+    TV.markers.push(m);
+  });
+  stats();
+}
+function sampleProfile(pts){
+  pts=pts||TV.pts;
+  const out=[]; let cum=0;
+  for(let i=0;i<pts.length-1;i++){
+    const a=pts[i],b=pts[i+1],d=hav(a,b),n=Math.max(2,Math.ceil(d/25));
+    for(let k=(i===0?0:1);k<=n;k++){
+      const t=k/n, la=a.lat+(b.lat-a.lat)*t, lo=a.lng+(b.lng-a.lng)*t;
+      if(k>0) cum+=d/n;
+      out.push({d:cum, e:elevAt(la,lo)});
+    }
+  }
+  return out;
+}
+function fmtH(hrs){const hh=Math.floor(hrs), mm=Math.round((hrs-hh)*60); return hh+'h '+String(mm).padStart(2,'0')+'m';}
+function stats(skipList){
+  const el=document.getElementById('tvStats');
+  if(TV.pts.length===0){el.textContent='No waypoints yet.'; drawProfile([]); listWps(); return;}
+  let dist=0; for(let i=1;i<TV.pts.length;i++) dist+=hav(TV.pts[i-1],TV.pts[i]);
+  const prof=sampleProfile();
+  let gain=0,loss=0,prev=null;
+  prof.forEach(p=>{if(p.e!=null){if(prev!=null){const d=p.e-prev; if(d>0)gain+=d; else loss-=d;} prev=p.e;}});
+  const v=parseFloat(document.getElementById('tvMode').value);
+  const travel=dist/1000/v + gain/600;
+  const stopMin=TV.stops.reduce((s,x)=>s+(x||0),0);
+  const total=travel+stopMin/60;
+  const marg=parseFloat(document.getElementById('tvMargin').value);
+  const totalM=total*(1+marg/100);
+  const eva=CREW.filter(n=>crewState[n]==='eva');
+  const atv=VEHICLES.filter(n=>vehState[n]==='eva');
+  el.innerHTML='<b>'+(dist/1000).toFixed(2)+' km</b> &middot; '+TV.pts.length+' waypoints'+
+    (eva.length?' &middot; EVA: '+eva.join(', '):'')+(atv.length?' + '+atv.join(', '):'')+'<br>'+
+    'up '+Math.round(gain)+' m / down '+Math.round(loss)+' m &middot; travel '+fmtH(travel)+
+    (stopMin?' &middot; stops '+Math.round(stopMin)+' min':'')+'<br>'+
+    'Total EVA (one-way): <b>'+fmtH(total)+'</b> &middot; with '+marg+'% margin: <b>'+fmtH(totalM)+'</b>';
+  drawProfile(prof);
+  if(!skipList) listWps();
+}
+function drawProfile(prof){
+  const cv=document.getElementById('profile'), ctx=cv.getContext('2d');
+  if(!ctx) return;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.fillStyle='#222b4a'; ctx.fillRect(0,0,cv.width,cv.height);
+  const pts=prof.filter(p=>p.e!=null);
+  if(pts.length<2){ctx.fillStyle='#9aa6c6'; ctx.font='20px sans-serif'; ctx.fillText('Elevation profile: add waypoints',30,135); return;}
+  const ML=64, MR=16, MT=14, MB=46;
+  const maxD=pts[pts.length-1].d, es=pts.map(p=>p.e);
+  let lo=Math.min(...es), hi=Math.max(...es); if(hi-lo<20){const m=(hi+lo)/2; lo=m-10; hi=m+10;}
+  const X=d=>ML+(d/maxD)*(cv.width-ML-MR), Y=e=>cv.height-MB-((e-lo)/(hi-lo))*(cv.height-MT-MB);
+  ctx.strokeStyle='#324067'; ctx.fillStyle='#9aa6c6'; ctx.font='15px sans-serif';
+  [lo,(lo+hi)/2,hi].forEach(e=>{ctx.beginPath();ctx.moveTo(ML,Y(e));ctx.lineTo(cv.width-MR,Y(e));ctx.stroke();ctx.fillText(Math.round(e),8,Y(e)+5);});
+  const nx=4;
+  for(let i=0;i<=nx;i++){const d=maxD*i/nx; ctx.fillText((d/1000).toFixed(1),X(d)-12,cv.height-MB+20);
+    ctx.beginPath();ctx.moveTo(X(d),cv.height-MB);ctx.lineTo(X(d),cv.height-MB+4);ctx.stroke();}
+  ctx.beginPath(); pts.forEach((p,i)=>i?ctx.lineTo(X(p.d),Y(p.e)):ctx.moveTo(X(p.d),Y(p.e)));
+  ctx.strokeStyle='#d97b2f'; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.lineTo(X(maxD),cv.height-MB); ctx.lineTo(X(0),cv.height-MB); ctx.closePath();
+  ctx.fillStyle='#d97b2f33'; ctx.fill();
+  ctx.fillStyle='#ecdfc3'; ctx.font='600 15px sans-serif';
+  ctx.fillText('Distance (km)', cv.width/2-45, cv.height-6);
+  ctx.save(); ctx.translate(20,cv.height/2+55); ctx.rotate(-Math.PI/2);
+  ctx.fillText('Elevation (m)',0,0); ctx.restore();
+}
+function listWps(){
+  const el=document.getElementById('wplist'); el.innerHTML='';
+  TV.pts.forEach((p,i)=>{
+    const [E,N]=toUTM16(p.lat,p.lng); const e=elevAt(p.lat,p.lng);
+    const r=document.createElement('div'); r.className='wprow';
+    r.innerHTML='<span class="n">'+(i+1)+'</span><span class="c">'+p.lat.toFixed(5)+', '+p.lng.toFixed(5)+
+      (e!=null?' &middot; '+Math.round(e)+'m':'')+'</span>'+
+      '<input class="stop" type="number" min="0" max="600" step="5" value="'+(TV.stops[i]||0)+'" title="stop duration (minutes)">min'+
+      '<button title="remove">&#x2715;</button>';
+    r.querySelector('input.stop').addEventListener('change',ev=>{TV.stops[i]=Math.max(0,parseFloat(ev.target.value)||0); stats(true);});
+    r.querySelector('button').addEventListener('click',()=>{TV.pts.splice(i,1); TV.stops.splice(i,1); redraw();});
+    el.appendChild(r);
+  });
+}
+map.on('click',e=>{
+  if(MS.active){ msAdd(e.latlng); return; }
+  if(!TV.active) return; TV.pts.push(e.latlng); TV.stops.push(0); redraw();
+});
+const tvBtn=document.getElementById('tvToggle');
+tvBtn.addEventListener('click',()=>{
+  TV.active=!TV.active;
+  if(TV.active && MS.active) msStop();
+  tvBtn.textContent=TV.active?'Stop planning':'Start planning';
+  tvBtn.classList.toggle('mode-on',TV.active);
+  document.getElementById('map').style.cursor=TV.active?'crosshair':'';
+});
+document.getElementById('tvHab').addEventListener('click',()=>{
+  if(TV.pts.length && hav(TV.pts[0],HAB)<5){return;}
+  TV.pts.unshift(L.latLng(HAB.lat,HAB.lng)); TV.stops.unshift(0);
+  redraw(); map.panTo(HAB);
+});
+document.getElementById('tvUndo').addEventListener('click',()=>{TV.pts.pop(); TV.stops.pop(); redraw();});
+document.getElementById('tvClear').addEventListener('click',()=>{TV.pts=[]; TV.stops=[]; simReset(); redraw();});
+document.getElementById('tvMode').addEventListener('change',()=>stats());
+document.getElementById('tvMargin').addEventListener('input',e=>{document.getElementById('tvMarginV').textContent=e.target.value+'%'; stats(true);});
+
+function parseCoordInput(s){
+  s=s.trim().replace(/[;]/g,',');
+  if(!s) return null;
+  const nums=s.split(/[,\s]+/).map(Number).filter(n=>!isNaN(n));
+  if(nums.length<2) return null;
+  let lat,lon;
+  if(Math.abs(nums[0])<=90 && Math.abs(nums[1])<=180){ lat=nums[0]; lon=nums[1]; }
+  else if(nums[0]>10000 && nums[1]>10000){ [lat,lon]=fromUTM16(nums[0],nums[1]); }
+  else return null;
+  if(lat<74 || lat>77 || lon<-95 || lon>-84) return 'far';
+  return L.latLng(lat,lon);
+}
+document.getElementById('coordAdd').addEventListener('click',()=>{
+  const s=document.getElementById('coordIn').value;
+  const r=parseCoordInput(s);
+  if(!r){alert('Could not parse. Use "75.4327, -89.8209" or UTM 16N "420829 8373773".'); return;}
+  if(r==='far'){alert('Those coordinates are far outside the Haughton region. Check values (lat lon decimal degrees, or UTM 16N easting northing).'); return;}
+  TV.pts.push(r); TV.stops.push(0); redraw();
+  document.getElementById('coordIn').value='';
+  map.panTo(r);
+});
+document.getElementById('coordIn').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('coordAdd').click();});
+
+/* save/load */
+function savedList(){ try{return JSON.parse(localStorage.getItem('fmars_traverses')||'{}');}catch(e){return {};} }
+function refreshSaved(){
+  const sel=document.getElementById('tvSaved'); sel.innerHTML='';
+  Object.keys(savedList()).forEach(k=>{const o=document.createElement('option');o.textContent=k;sel.appendChild(o);});
+}
+document.getElementById('tvSave').addEventListener('click',()=>{
+  const name=document.getElementById('tvName').value.trim()||('Traverse '+new Date().toISOString().slice(0,16));
+  const all=savedList();
+  all[name]={pts:TV.pts.map(p=>[+p.lat.toFixed(6),+p.lng.toFixed(6)]), stops:[...TV.stops], crew:{...crewState}, veh:{...vehState}, margin:document.getElementById('tvMargin').value};
+  try{localStorage.setItem('fmars_traverses',JSON.stringify(all));}catch(e){alert('Could not save (storage unavailable); use Export instead.');}
+  refreshSaved();
+});
+document.getElementById('tvLoad').addEventListener('click',()=>{
+  const k=document.getElementById('tvSaved').value; const all=savedList();
+  if(all[k]){
+    const rec=Array.isArray(all[k])?{pts:all[k]}:all[k];
+    TV.pts=rec.pts.map(p=>L.latLng(p[0],p[1]));
+    TV.stops=rec.stops||rec.pts.map(()=>0);
+    if(rec.crew) Object.assign(crewState,rec.crew);
+    if(rec.veh) Object.assign(vehState,rec.veh);
+    if(rec.margin){document.getElementById('tvMargin').value=rec.margin; document.getElementById('tvMarginV').textContent=rec.margin+'%';}
+    renderCrew(); redraw();
+    if(TV.pts.length) map.fitBounds(L.latLngBounds(TV.pts).pad(0.3));
+  }
+});
+document.getElementById('tvDel').addEventListener('click',()=>{
+  const k=document.getElementById('tvSaved').value; const all=savedList(); delete all[k];
+  localStorage.setItem('fmars_traverses',JSON.stringify(all)); refreshSaved();
+});
+refreshSaved();
+
+/* export & pin */
+function dl(name,text,mime){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([text],{type:mime})); a.download=name; a.click();
+}
+function crewDesc(){
+  const eva=CREW.filter(n=>crewState[n]==='eva'), habC=CREW.filter(n=>crewState[n]==='hab');
+  const atv=VEHICLES.filter(n=>vehState[n]==='eva');
+  return 'EVA crew: '+(eva.join(', ')||'unassigned')+(atv.length?' with '+atv.join(', '):'')+' | Habitat: '+(habC.join(', ')||'none');
+}
+document.getElementById('tvGpx').addEventListener('click',()=>{
+  if(!TV.pts.length) return alert('No waypoints.');
+  const nm=(document.getElementById('tvName').value.trim()||'FMARS traverse');
+  let g='<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="FMARS EVA planner" xmlns="http://www.topografix.com/GPX/1/1">\n  <metadata><name>'+nm+'</name><desc>'+crewDesc()+'</desc></metadata>\n';
+  TV.pts.forEach((p,i)=>{const e=elevAt(p.lat,p.lng); g+='  <wpt lat="'+p.lat.toFixed(6)+'" lon="'+p.lng.toFixed(6)+'">'+(e!=null?'<ele>'+Math.round(e)+'</ele>':'')+'<name>WP'+(i+1)+(TV.stops[i]?' (stop '+TV.stops[i]+'min)':'')+'</name></wpt>\n';});
+  g+='  <trk><name>'+nm+'</name><desc>'+crewDesc()+'</desc><trkseg>\n';
+  TV.pts.forEach(p=>{g+='    <trkpt lat="'+p.lat.toFixed(6)+'" lon="'+p.lng.toFixed(6)+'"/>\n';});
+  g+='  </trkseg></trk>\n</gpx>';
+  dl(nm.replace(/\s+/g,'_')+'.gpx',g,'application/gpx+xml');
+});
+document.getElementById('tvGeo').addEventListener('click',()=>{
+  if(!TV.pts.length) return alert('No waypoints.');
+  const nm=(document.getElementById('tvName').value.trim()||'FMARS traverse');
+  const fc={type:'FeatureCollection',features:[
+    {type:'Feature',properties:{name:nm,crew:crewDesc()},geometry:{type:'LineString',coordinates:TV.pts.map(p=>[+p.lng.toFixed(6),+p.lat.toFixed(6)])}},
+    ...TV.pts.map((p,i)=>({type:'Feature',properties:{name:'WP'+(i+1),stop_min:TV.stops[i]||0},geometry:{type:'Point',coordinates:[+p.lng.toFixed(6),+p.lat.toFixed(6)]}}))]};
+  dl(nm.replace(/\s+/g,'_')+'.geojson',JSON.stringify(fc,null,1),'application/geo+json');
+});
+document.getElementById('tvPin').addEventListener('click',()=>{
+  if(TV.pts.length<2) return alert('Plan a traverse first (2+ waypoints).');
+  const nm=(document.getElementById('tvName').value.trim()||('Traverse '+(userLayerN+1)));
+  const items=[L.polyline(tvLine(),{color:'#d4a437',weight:3,opacity:.9,dashArray:'2 6'}).bindPopup('<b>'+nm+'</b><br>'+crewDesc())];
+  TV.pts.forEach((p,i)=>items.push(L.circleMarker(p,{radius:4,color:'#fff',weight:1,fillColor:'#d4a437',fillOpacity:1}).bindTooltip('WP'+(i+1))));
+  addUserLayer(nm, L.layerGroup(items));
+});
+
+/* ================= measure tool ================= */
+const MS={active:false, mode:'path', pts:[], markers:[], line:null, shape:null};
+function msStop(){
+  MS.active=false;
+  document.querySelector('.ctl-measure')?.classList.remove('on');
+  document.getElementById('map').style.cursor=TV.active?'crosshair':'';
+  document.getElementById('measureBox').style.display='none';
+  msClearGeom();
+}
+function msClearGeom(){
+  MS.pts=[]; MS.markers.forEach(m=>map.removeLayer(m)); MS.markers=[];
+  if(MS.line){map.removeLayer(MS.line); MS.line=null;}
+  if(MS.shape){map.removeLayer(MS.shape); MS.shape=null;}
+}
+const M_LAT=110950, M_LON=111320*Math.cos(75.4*Math.PI/180);
+function polyArea(pts){
+  /* planar shoelace in local meters */
+  let s=0;
+  for(let i=0;i<pts.length;i++){
+    const a=pts[i], b=pts[(i+1)%pts.length];
+    const ax=a.lng*M_LON, ay=a.lat*M_LAT, bx=b.lng*M_LON, by=b.lat*M_LAT;
+    s+=ax*by-bx*ay;
+  }
+  return Math.abs(s)/2;
+}
+function msAdd(ll){
+  if(MS.mode==='circle' && MS.pts.length>=2){ msClearGeom(); }
+  MS.pts.push(ll);
+  const m=L.marker(ll,{icon:L.divIcon({className:'ms-badge',html:String(MS.pts.length),iconSize:[17,17],iconAnchor:[8,8]})}).addTo(map);
+  MS.markers.push(m);
+  if(MS.line){map.removeLayer(MS.line); MS.line=null;}
+  if(MS.shape){map.removeLayer(MS.shape); MS.shape=null;}
+  if(MS.mode==='path' && MS.pts.length>1)
+    MS.line=L.polyline(MS.pts.map(p=>[p.lat,p.lng]),{color:'#c05a9e',weight:2.5,dashArray:'5 5'}).addTo(map);
+  if(MS.mode==='poly' && MS.pts.length>1){
+    MS.shape=MS.pts.length>2
+      ? L.polygon(MS.pts.map(p=>[p.lat,p.lng]),{color:'#c05a9e',weight:2,fillColor:'#c05a9e',fillOpacity:.18})
+      : L.polyline(MS.pts.map(p=>[p.lat,p.lng]),{color:'#c05a9e',weight:2.5,dashArray:'5 5'});
+    MS.shape.addTo(map);
+  }
+  if(MS.mode==='circle' && MS.pts.length===2){
+    const r=hav(MS.pts[0],MS.pts[1]);
+    MS.shape=L.circle(MS.pts[0],{radius:r,color:'#c05a9e',weight:2,fillColor:'#c05a9e',fillOpacity:.15}).addTo(map);
+  }
+  msRender();
+}
+function bearing(a,b){
+  const p1=a.lat*Math.PI/180,p2=b.lat*Math.PI/180,dl=(b.lng-a.lng)*Math.PI/180;
+  const y=Math.sin(dl)*Math.cos(p2), x=Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl);
+  return ((Math.atan2(y,x)*180/Math.PI)+360)%360;
+}
+function msRender(){
+  const el=document.getElementById('measureBody');
+  if(MS.pts.length===0){
+    el.textContent=MS.mode==='circle'?'Click the circle center, then a point on its edge.':(MS.mode==='poly'?'Click 3 or more vertices.':'Click points on the map.');
+    return;
+  }
+  let html='';
+  if(MS.mode==='path'){
+    if(MS.pts.length===1){
+      const p=MS.pts[0], e=elevAt(p.lat,p.lng);
+      html='Point 1: '+p.lat.toFixed(5)+', '+p.lng.toFixed(5)+(e!=null?' &middot; <b>'+Math.round(e)+' m</b>':'')+'<br>Click a second point for distance.';
+    } else {
+      let total=0; for(let i=1;i<MS.pts.length;i++) total+=hav(MS.pts[i-1],MS.pts[i]);
+      const a=MS.pts[0], b=MS.pts[MS.pts.length-1];
+      const ea=elevAt(a.lat,a.lng), eb=elevAt(b.lat,b.lng);
+      const prof=sampleProfile(MS.pts).filter(p=>p.e!=null);
+      let gain=0,loss=0,prev=null,mn=1e9,mx=-1e9;
+      prof.forEach(p=>{if(prev!=null){const d=p.e-prev; if(d>0)gain+=d; else loss-=d;} prev=p.e; mn=Math.min(mn,p.e); mx=Math.max(mx,p.e);});
+      const lastLeg=hav(MS.pts[MS.pts.length-2],b);
+      html='Path distance: <b>'+(total/1000).toFixed(2)+' km</b>'+
+        (MS.pts.length>2?' ('+MS.pts.length+' pts) &middot; straight: '+(hav(a,b)/1000).toFixed(2)+' km':'')+'<br>'+
+        (ea!=null&&eb!=null?'Elev: '+Math.round(ea)+' m to '+Math.round(eb)+' m (<b>'+(eb-ea>=0?'+':'')+Math.round(eb-ea)+' m</b>)<br>':'')+
+        (prof.length?'Along path: up '+Math.round(gain)+' / down '+Math.round(loss)+' m &middot; min '+Math.round(mn)+' / max '+Math.round(mx)+' m<br>':'')+
+        'Last leg: '+(lastLeg/1000).toFixed(2)+' km, bearing '+Math.round(bearing(MS.pts[MS.pts.length-2],b))+'&deg;';
+    }
+  } else if(MS.mode==='poly'){
+    if(MS.pts.length<3){ html=MS.pts.length+' vertex(es); click '+(3-MS.pts.length)+' more for a polygon.'; }
+    else {
+      let per=0; for(let i=0;i<MS.pts.length;i++) per+=hav(MS.pts[i],MS.pts[(i+1)%MS.pts.length]);
+      const A=polyArea(MS.pts);
+      html='Vertices: '+MS.pts.length+'<br>Perimeter: <b>'+(per/1000).toFixed(2)+' km</b><br>'+
+        'Area: <b>'+(A/1e6).toFixed(3)+' km&sup2;</b> ('+(A/1e4).toFixed(1)+' ha)';
+    }
+  } else if(MS.mode==='circle'){
+    if(MS.pts.length===1) html='Center set: '+MS.pts[0].lat.toFixed(5)+', '+MS.pts[0].lng.toFixed(5)+'<br>Click a point on the edge.';
+    else {
+      const r=hav(MS.pts[0],MS.pts[1]);
+      html='Radius: <b>'+(r/1000).toFixed(2)+' km</b><br>Circumference: <b>'+(2*Math.PI*r/1000).toFixed(2)+' km</b><br>'+
+        'Area: <b>'+(Math.PI*r*r/1e6).toFixed(3)+' km&sup2;</b><br><span class="hint">Click again to start a new circle.</span>';
+    }
+  }
+  el.innerHTML=html;
+}
+document.querySelectorAll('#measureBox .modebtns .btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#measureBox .modebtns .btn').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); MS.mode=b.dataset.mode; msClearGeom(); msRender();
+}));
+document.getElementById('msClear').addEventListener('click',()=>{msClearGeom(); msRender();});
+document.getElementById('msDone').addEventListener('click',msStop);
+
+/* map corner buttons */
+const CtlBtns=L.Control.extend({options:{position:'topleft'},
+  onAdd:function(){
+    const c=L.DomUtil.create('div','leaflet-bar');
+    const b1=L.DomUtil.create('a','mapbtn ctl-measure',c); b1.innerHTML='&#x1F4CF;'; b1.href='#'; b1.title='Measure: path, polygon, circle';
+    const b2=L.DomUtil.create('a','mapbtn ctl-3d',c); b2.innerHTML='3D'; b2.href='#'; b2.title='3D terrain (orbit, pan, oblique views, free fly)';
+    L.DomEvent.on(b1,'click',e=>{L.DomEvent.stop(e);
+      if(MS.active){msStop();} else {
+        if(TV.active) tvBtn.click();
+        MS.active=true; b1.classList.add('on');
+        document.getElementById('map').style.cursor='crosshair';
+        document.getElementById('measureBox').style.display='block'; msRender();
+      }});
+    L.DomEvent.on(b2,'click',e=>{L.DomEvent.stop(e); open3D('explore');});
+    return c;
+  }});
+map.addControl(new CtlBtns());
+
+/* ================= EVA simulation ================= */
+const SIM={running:false, t:0, mult:60, last:0, raf:null, crew:[], atvs:[], hab:null, sched:null};
+function simSchedule(){
+  const v=parseFloat(document.getElementById('tvMode').value)/3.6; /* m/s */
+  const ev=[]; let t=0, cum=0;
+  for(let i=0;i<TV.pts.length;i++){
+    if(i>0){
+      const d=hav(TV.pts[i-1],TV.pts[i]), dur=d/v;
+      ev.push({type:'move',a:TV.pts[i-1],b:TV.pts[i],t0:t,t1:t+dur,d0:cum,d1:cum+d,leg:i});
+      t+=dur; cum+=d;
+    }
+    const st=(TV.stops[i]||0)*60;
+    if(st>0){ ev.push({type:'stop',p:TV.pts[i],t0:t,t1:t+st,wp:i+1}); t+=st; }
+  }
+  return {ev, total:t, dist:cum};
+}
+function simPos(t){
+  const s=SIM.sched;
+  if(!s||!s.ev.length) return null;
+  if(t>=s.total){ const last=s.ev[s.ev.length-1]; return {ll:last.type==='move'?last.b:last.p, done:true, txt:'EVA complete', d:s.dist}; }
+  for(const e of s.ev){
+    if(t>=e.t0&&t<e.t1){
+      if(e.type==='move'){
+        const f=(t-e.t0)/(e.t1-e.t0);
+        return {ll:L.latLng(e.a.lat+(e.b.lat-e.a.lat)*f, e.a.lng+(e.b.lng-e.a.lng)*f), done:false,
+          txt:'Traveling leg '+e.leg+'/'+(TV.pts.length-1), d:e.d0+(e.d1-e.d0)*f};
+      }
+      const rem=Math.ceil((e.t1-t)/60);
+      return {ll:e.p, done:false, txt:'At WP'+e.wp+' stop, '+rem+' min left', d:e.d0!==undefined?e.d0:null};
+    }
+  }
+  return null;
+}
+function simIcon(label,glyph,color){
+  return L.divIcon({className:'',html:'<div style="text-align:center;transform:translateY(-4px)"><div class="sim-lbl" style="border-color:'+color+'">'+label+'</div><div style="font-size:16px;color:'+color+';text-shadow:0 0 4px #000,0 0 8px #000">'+glyph+'</div></div>',iconSize:[70,34],iconAnchor:[35,28]});
+}
+function simBuildMarkers(){
+  simClearMarkers();
+  const eva=CREW.filter(n=>crewState[n]==='eva');
+  const habC=CREW.filter(n=>crewState[n]==='hab');
+  const atvs=VEHICLES.filter(n=>vehState[n]==='eva');
+  eva.forEach((n,i)=>{
+    const m=L.marker(TV.pts[0],{icon:simIcon(n,'✶','#d97b2f'),zIndexOffset:1000+i}).addTo(map);
+    SIM.crew.push({name:n,m,off:i});
+  });
+  atvs.forEach((n,i)=>{
+    const m=L.marker(TV.pts[0],{icon:simIcon(n,'◆','#d4a437'),zIndexOffset:900+i}).addTo(map);
+    SIM.atvs.push({name:n,m,off:i});
+  });
+  SIM.hab=L.marker(HAB,{icon:L.divIcon({className:'',html:
+    '<div style="text-align:center"><div style="font-size:20px;color:#d97b2f;text-shadow:0 0 5px #000">&#x2302;</div>'+
+    '<div class="sim-lbl" style="border-color:#7cc4de">Hab: '+(habC.join(', ')||'empty')+'</div></div>',
+    iconSize:[150,40],iconAnchor:[75,20]}),zIndexOffset:800}).addTo(map);
+}
+function simClearMarkers(){
+  SIM.crew.forEach(c=>map.removeLayer(c.m)); SIM.crew=[];
+  SIM.atvs.forEach(c=>map.removeLayer(c.m)); SIM.atvs=[];
+  if(SIM.hab){map.removeLayer(SIM.hab); SIM.hab=null;}
+}
+function simOffset(ll,i,total){
+  /* spread members a few meters apart so labels stay readable */
+  const spread=28; /* meters */
+  const k=i-(total-1)/2;
+  return L.latLng(ll.lat, ll.lng + (k*spread)/(111320*Math.cos(ll.lat*Math.PI/180)));
+}
+function fmtClock(s){
+  const hh=Math.floor(s/3600),mm=Math.floor((s%3600)/60),ss=Math.floor(s%60);
+  return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+}
+function simTick(ts){
+  if(!SIM.running) return;
+  SIM.raf=requestAnimationFrame(simTick);
+  const dt=Math.min(0.1,(ts-SIM.last)/1000||0.016); SIM.last=ts;
+  SIM.t+=dt*SIM.mult;
+  const pos=simPos(SIM.t);
+  if(!pos) return;
+  SIM.crew.forEach((c,i)=>c.m.setLatLng(simOffset(pos.ll,i,SIM.crew.length)));
+  SIM.atvs.forEach((c,i)=>c.m.setLatLng(simOffset(pos.ll,i+SIM.crew.length+1,SIM.crew.length+SIM.atvs.length+2)));
+  const st=document.getElementById('simStatus');
+  st.innerHTML='<span class="clk">T+ '+fmtClock(SIM.t)+'</span> ('+SIM.mult+'x) &middot; '+pos.txt+
+    (pos.d!=null?'<br>Distance covered: <b>'+(pos.d/1000).toFixed(2)+' km</b> of '+(SIM.sched.dist/1000).toFixed(2)+' km':'');
+  if(pos.done){ SIM.running=false; document.getElementById('simStart').textContent='Start'; }
+}
+document.getElementById('simStart').addEventListener('click',function(){
+  if(SIM.running){ SIM.running=false; this.textContent='Resume'; return; }
+  if(TV.pts.length<2){alert('Plan a traverse first (2+ waypoints).'); return;}
+  if(!CREW.some(n=>crewState[n]==='eva')){alert('Assign at least one crew member to the EVA (Traverse tab, top).'); return;}
+  if(!SIM.sched || SIM.t===0){ SIM.sched=simSchedule(); simBuildMarkers(); }
+  SIM.mult=parseFloat(document.getElementById('simSpeed').value);
+  SIM.running=true; SIM.last=0; this.textContent='Pause';
+  SIM.raf=requestAnimationFrame(simTick);
+});
+function simReset(){
+  SIM.running=false; SIM.t=0; SIM.sched=null; simClearMarkers();
+  document.getElementById('simStart').textContent='Start';
+  document.getElementById('simStatus').textContent='Not running.';
+}
+document.getElementById('simReset').addEventListener('click',simReset);
+document.getElementById('simSpeed').addEventListener('change',e=>SIM.mult=parseFloat(e.target.value));
+
+/* ================= 3D terrain viewer ================= */
+const V3={renderer:null, scene:null, cam:null, mesh:null, running:false, mode:'explore',
+  ex:2.5, spd:260, keys:{}, yaw:Math.PI, pitch:-0.4, texMode:'sat', texLoaded:{}, pathLine:null,
+  tgt:null, dist:20000, az:0.8, el:0.7, auto:false};
+const M_PER_LAT=110950, M_PER_LON=111320*Math.cos(75.4*Math.PI/180);
+const lon0=(EG.west+EG.east)/2, lat0=(EG.south+EG.north)/2;
+function llToXZ(lat,lon){ return [ (lon-lon0)*M_PER_LON, (lat0-lat)*M_PER_LAT ]; }
+function buildTerrain(){
+  const step=2, gw=Math.floor(EG.w/step), gh=Math.floor(EG.h/step);
+  const geo=new THREE.PlaneBufferGeometry(1,1,gw-1,gh-1);
+  const pos=geo.attributes.position, uv=geo.attributes.uv;
+  const mercY=lat=>Math.log(Math.tan(Math.PI/4+lat*Math.PI/360));
+  const mS=mercY(EG.south), mN=mercY(EG.north);
+  for(let j=0;j<gh;j++)for(let i=0;i<gw;i++){
+    const idx=j*gw+i;
+    const lon=EG.west+(i*step/(EG.w-1))*(EG.east-EG.west);
+    const lat=EG.north-(j*step/(EG.h-1))*(EG.north-EG.south);
+    const [x,z]=llToXZ(lat,lon);
+    let e=EG.a[(j*step)*EG.w+(i*step)]; if(e<-9000)e=0;
+    pos.setXYZ(idx,x,e,z);
+    uv.setXY(idx,(lon-EG.west)/(EG.east-EG.west),(mercY(lat)-mS)/(mN-mS));
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+function texCanvasFromImg(src,cb){
+  const im=new Image(); im.onload=()=>{const cv=document.createElement('canvas');cv.width=im.width;cv.height=im.height;
+    cv.getContext('2d').drawImage(im,0,0); cb(new THREE.CanvasTexture(cv));};
+  im.src=src;
+}
+function satTexture(cb){
+  const z=10;
+  const t2x=lon=>(lon+180)/360*Math.pow(2,z);
+  const l2y=lat=>(1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*Math.pow(2,z);
+  const x0=Math.floor(t2x(EG.west)), x1=Math.floor(t2x(EG.east));
+  const y0=Math.floor(l2y(EG.north)), y1=Math.floor(l2y(EG.south));
+  const cv=document.createElement('canvas');
+  cv.width=(x1-x0+1)*256; cv.height=(y1-y0+1)*256;
+  const ctx=cv.getContext('2d');
+  let need=(x1-x0+1)*(y1-y0+1), fail=false;
+  for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){
+    const im=new Image(); im.crossOrigin='anonymous';
+    im.onload=()=>{ctx.drawImage(im,(x-x0)*256,(y-y0)*256); if(--need===0&&!fail) finish();};
+    im.onerror=()=>{if(!fail){fail=true; cb(null);}};
+    im.src='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+z+'/'+y+'/'+x;
+  }
+  function finish(){
+    const mercN=l2y(EG.north), mercS=l2y(EG.south), tw=t2x(EG.west), te=t2x(EG.east);
+    const cx=(tw-x0)*256, cw=(te-tw)*256, cy=(mercN-y0)*256, ch=(mercS-mercN)*256;
+    const out=document.createElement('canvas'); out.width=Math.round(cw); out.height=Math.round(ch);
+    out.getContext('2d').drawImage(cv,cx,cy,cw,ch,0,0,out.width,out.height);
+    const tx=new THREE.CanvasTexture(out); tx.flipY=true; cb(tx);
+  }
+}
+function setTexture(mode){
+  V3.texMode=mode;
+  const apply=t=>{if(t){t.anisotropy=4; V3.mesh.material.map=t; V3.mesh.material.needsUpdate=true;}};
+  if(V3.texLoaded[mode]) return apply(V3.texLoaded[mode]);
+  if(mode==='sat') satTexture(t=>{ if(t){V3.texLoaded.sat=t; if(V3.texMode==='sat')apply(t);} else {document.getElementById('vzTex').value='tint'; setTexture('tint');} });
+  else texCanvasFromImg(mode==='tint'?'img/elevtint.png':'img/hillshade.png',t=>{V3.texLoaded[mode]=t; if(V3.texMode===mode)apply(t);});
+}
+function groundY(x,z){
+  const lon=lon0+x/M_PER_LON, lat=lat0-z/M_PER_LAT;
+  const e=elevAt(lat,lon); return (e==null?0:e)*V3.ex;
+}
+function ensure3D(){
+  if(V3.renderer) return;
+  const wrap=document.getElementById('viz3d');
+  V3.renderer=new THREE.WebGLRenderer({antialias:true});
+  wrap.appendChild(V3.renderer.domElement);
+  V3.scene=new THREE.Scene();
+  V3.scene.background=new THREE.Color(0x0b1226);
+  V3.scene.fog=new THREE.Fog(0x0b1226, 30000, 95000);
+  V3.cam=new THREE.PerspectiveCamera(60,1,10,220000);
+  V3.scene.add(new THREE.AmbientLight(0xdddcff,0.85));
+  const sun=new THREE.DirectionalLight(0xffeedd,1.0); sun.position.set(-20000,18000,-14000); V3.scene.add(sun);
+  const sun2=new THREE.DirectionalLight(0x8899cc,0.35); sun2.position.set(18000,12000,16000); V3.scene.add(sun2);
+  V3.mesh=new THREE.Mesh(buildTerrain(),new THREE.MeshLambertMaterial({color:0xffffff}));
+  V3.mesh.scale.y=V3.ex; V3.scene.add(V3.mesh);
+  setTexture('sat');
+  const [cx,cz]=llToXZ(75.38,-89.68);
+  V3.tgt=new THREE.Vector3(cx,0,cz);
+  /* input */
+  window.addEventListener('keydown',e=>{V3.keys[e.key.toLowerCase()]=true; if(e.key==='Escape')close3D();});
+  window.addEventListener('keyup',e=>{V3.keys[e.key.toLowerCase()]=false;});
+  const el=V3.renderer.domElement;
+  let drag=null, btn=0;
+  el.addEventListener('contextmenu',e=>e.preventDefault());
+  el.addEventListener('mousedown',e=>{drag=[e.clientX,e.clientY]; btn=e.button;});
+  window.addEventListener('mouseup',()=>drag=null);
+  window.addEventListener('mousemove',e=>{
+    if(!drag)return;
+    const dx=e.clientX-drag[0], dy=e.clientY-drag[1]; drag=[e.clientX,e.clientY];
+    if(V3.mode==='free'){
+      V3.yaw-=dx*0.004; V3.pitch-=dy*0.004;
+      V3.pitch=Math.max(-1.35,Math.min(0.6,V3.pitch));
+    } else { /* explore */
+      if(btn===2||e.shiftKey){ /* pan */
+        const right=new THREE.Vector3(Math.cos(V3.az),0,-Math.sin(V3.az));
+        const fwd=new THREE.Vector3(-Math.sin(V3.az),0,-Math.cos(V3.az));
+        V3.tgt.addScaledVector(right,-dx*V3.dist*0.0012);
+        V3.tgt.addScaledVector(fwd,-dy*V3.dist*0.0012);
+        V3.tgt.x=Math.max(-45000,Math.min(45000,V3.tgt.x));
+        V3.tgt.z=Math.max(-40000,Math.min(40000,V3.tgt.z));
+      } else { /* orbit */
+        V3.az-=dx*0.005; V3.el+=dy*0.005;
+        V3.el=Math.max(0.08,Math.min(1.5,V3.el));
+      }
+    }
+  });
+  el.addEventListener('wheel',e=>{
+    if(V3.mode!=='explore')return;
+    e.preventDefault();
+    V3.dist*=Math.exp(e.deltaY*0.0012);
+    V3.dist=Math.max(700,Math.min(95000,V3.dist));
+  },{passive:false});
+  window.addEventListener('resize',size3D);
+}
+function size3D(){
+  if(!V3.renderer)return;
+  const wrap=document.getElementById('viz3d');
+  const h=wrap.clientHeight-document.getElementById('vizbar').offsetHeight;
+  V3.renderer.setSize(wrap.clientWidth,h);
+  V3.cam.aspect=wrap.clientWidth/h; V3.cam.updateProjectionMatrix();
+}
+function drawPath3D(){
+  if(V3.pathLine){V3.scene.remove(V3.pathLine); V3.pathLine=null;}
+  if(TV.pts.length<2) return;
+  const pts=[];
+  for(let i=0;i<TV.pts.length-1;i++){
+    const a=TV.pts[i],b=TV.pts[i+1],d=hav(a,b),n=Math.max(2,Math.ceil(d/60));
+    for(let k=(i===0?0:1);k<=n;k++){
+      const t=k/n, la=a.lat+(b.lat-a.lat)*t, lo=a.lng+(b.lng-a.lng)*t;
+      const [x,z]=llToXZ(la,lo);
+      pts.push(new THREE.Vector3(x,(elevAt(la,lo)||0)+8,z));
+    }
+  }
+  const g=new THREE.BufferGeometry().setFromPoints(pts);
+  V3.pathLine=new THREE.Line(g,new THREE.LineBasicMaterial({color:0xd97b2f}));
+  V3.pathLine.scale.y=V3.ex; V3.scene.add(V3.pathLine);
+}
+function setMode3D(m){
+  V3.mode=m;
+  document.getElementById('vzExplore').classList.toggle('on',m==='explore');
+  document.getElementById('vzFree').classList.toggle('on',m==='free');
+  document.getElementById('vizhint').textContent = m==='free'
+    ? 'Drag to look. W/S or arrows = forward/back, A/D = strafe, R/F = up/down, Shift = boost. Esc to close.'
+    : 'Drag = orbit (oblique views) / scroll = zoom / right-drag or Shift+drag = pan. Auto-orbit spins the view. Esc to close.';
+}
+function open3D(mode){
+  document.getElementById('viz3d').style.display='flex';
+  ensure3D(); size3D(); drawPath3D();
+  setMode3D(mode||'explore');
+  if(!V3.running){V3.running=true; V3.lastT=0; requestAnimationFrame(loop3D);}
+}
+function orbitCrater(){
+  /* center on the crater and spin slowly; drag any time to take over the view */
+  open3D('explore');
+  const [cx,cz]=llToXZ(75.38,-89.68);
+  V3.tgt.set(cx,0,cz);
+  V3.el=0.55; V3.dist=18000;
+  V3.auto=true; document.getElementById('vzAuto').checked=true;
+}
+function close3D(){document.getElementById('viz3d').style.display='none'; V3.running=false;}
+function loop3D(ts){
+  if(!V3.running)return;
+  requestAnimationFrame(loop3D);
+  const dt=Math.min(0.05,(ts-V3.lastT)/1000||0.016); V3.lastT=ts;
+  const c=V3.cam;
+  if(V3.mode==='free'){
+    const boost=(V3.keys['shift']?3:1), sp=V3.spd*boost;
+    const dir=new THREE.Vector3(Math.sin(V3.yaw)*Math.cos(V3.pitch),Math.sin(V3.pitch),Math.cos(V3.yaw)*Math.cos(V3.pitch));
+    const right=new THREE.Vector3(Math.cos(V3.yaw),0,-Math.sin(V3.yaw));
+    if(V3.keys['w']||V3.keys['arrowup']) c.position.addScaledVector(dir,sp*dt);
+    if(V3.keys['s']||V3.keys['arrowdown']) c.position.addScaledVector(dir,-sp*dt);
+    if(V3.keys['a']||V3.keys['arrowleft']) c.position.addScaledVector(right,-sp*dt);
+    if(V3.keys['d']||V3.keys['arrowright']) c.position.addScaledVector(right,sp*dt);
+    if(V3.keys['r']) c.position.y+=sp*dt;
+    if(V3.keys['f']) c.position.y-=sp*dt;
+    const gy=groundY(c.position.x,c.position.z)+25;
+    if(c.position.y<gy) c.position.y=gy;
+    c.lookAt(c.position.clone().add(dir));
+  } else { /* explore: orbit / pan / zoom, optional auto-orbit */
+    if(V3.auto) V3.az+=dt*0.06;
+    const ty=groundY(V3.tgt.x,V3.tgt.z);
+    const cx=V3.tgt.x+Math.sin(V3.az)*Math.cos(V3.el)*V3.dist;
+    const cz=V3.tgt.z+Math.cos(V3.az)*Math.cos(V3.el)*V3.dist;
+    let cy=ty+Math.sin(V3.el)*V3.dist;
+    const gy=groundY(cx,cz)+40;
+    if(cy<gy) cy=gy;
+    c.position.set(cx,cy,cz);
+    c.lookAt(V3.tgt.x,ty,V3.tgt.z);
+  }
+  V3.renderer.render(V3.scene,V3.cam);
+}
+document.getElementById('vzEx').addEventListener('input',e=>{
+  V3.ex=parseFloat(e.target.value);
+  document.getElementById('vzExV').textContent=V3.ex+'x';
+  if(V3.mesh) V3.mesh.scale.y=V3.ex;
+  if(V3.pathLine) V3.pathLine.scale.y=V3.ex;
+});
+document.getElementById('vzSpd').addEventListener('input',e=>{V3.spd=parseFloat(e.target.value); document.getElementById('vzSpdV').textContent=e.target.value;});
+document.getElementById('vzTex').addEventListener('change',e=>setTexture(e.target.value));
+document.getElementById('vzExplore').addEventListener('click',()=>setMode3D('explore'));
+document.getElementById('vzOrbit').addEventListener('click',orbitCrater);
+document.getElementById('vzFree').addEventListener('click',()=>{
+  /* start free fly from current explore camera position */
+  if(V3.cam && V3.mode!=='free'){
+    const d=new THREE.Vector3(); V3.cam.getWorldDirection(d);
+    V3.yaw=Math.atan2(d.x,d.z); V3.pitch=Math.asin(Math.max(-1,Math.min(1,d.y)));
+  }
+  setMode3D('free');
+});
+document.getElementById('vzAuto').addEventListener('change',e=>{V3.auto=e.target.checked; if(V3.auto&&V3.mode!=='explore')setMode3D('explore');});
+document.getElementById('vzClose').addEventListener('click',close3D);
+</script>
+</body>
+</html>
