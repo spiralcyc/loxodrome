@@ -471,6 +471,12 @@ const LAYERS=[
    {name:'Esri satellite', layer:baseEsri, on:true, radio:true, meta:'Esri World Imagery web tiles (online).'},
    {name:'OpenTopoMap', layer:baseTopo, radio:true, meta:'Topographic web basemap (online).'},
    {name:'OpenStreetMap', layer:baseOSM, radio:true, meta:'Standard OSM basemap (online).'}]},
+ {grp:'Station & operations',items:[
+   {name:'FMARS habitat & infrastructure (approx)', layer:infraLayer, meta:'Station assets from the GPS survey: Hab (house symbol), generator shed, incinerator, windmill, windsock, tripod, cairn, and data logger stations A, B, C. Hover for names, click for UTM coordinates.'},
+   {name:'Field waypoints', layer:fieldLayer, meta:'Field waypoints from the GPS survey: landing strip corners (gold), EVA starts and ends (green), science targets such as samples, outcrops, patterned ground and the stromatolite boulder (purple), track junctions and creek crossings (blue-grey).'},
+   {name:'Previous EVA tracks', layer:tracksLayer, meta:'Crew GPS logs: crater EVA (red dashed) and stream and water EVA (blue dashed), thinned from raw KML activity files.'},
+   {name:'Crew XIX EVA tracks (2026)', layer:crew19Layer, meta:'Crew 19 Tiriganiaq EVA GPS logs, mission July 2026. Three logged tracks (magenta lines), simplified from a raw 585KB KML export for web performance while preserving path shape. Click a track for its logged timestamp.'},
+   {name:'Crew XIX waypoints (2026)', layer:crew19WaypointsLayer, meta:'43 Crew 19 EVA waypoints: sample sites, oases, hydrothermal vent samples, fault observations and traverse markers, compiled from the crew’s mission GPS exports (gold diamonds). Click for notes, log time and elevation.'}]},
  {grp:'Terrain (Arctic DEM 2m)',items:[
    {name:'Hillshade', layer:hsProxy, opac:true, exag:true, meta:'Shaded relief from the Arctic DEM 2m mosaic v4.1 (Polar Geospatial Center), sun az 315 alt 45. Moving the exaggeration slider turns the layer on and re-renders the shading with vertical exaggeration; from top-down this reads as deeper shadows. For tilted views use the 3D button on the map: Explore mode gives orbit, pan and zoom, and Orbit crater spins around the structure.'},
    {name:'Elevation tint', layer:img('elevtint',0.65), opac:true, meta:'Hypsometric color ramp 0 to 450 m blended with hillshade, from the same Arctic DEM tile.'},
@@ -482,13 +488,7 @@ const LAYERS=[
  {grp:'Geology: vector',items:[
    {name:'Surficial geology (GSC)', layer:surficialLayer, meta:'Surficial geology of western Devon Island (Geological Survey of Canada), clipped to the crater region. Click a polygon for unit label, type and depositional event.'},
    {name:'Bedrock geology (GSC national)', layer:bedrockLayer, meta:'Bedrock Geology of Canada national compilation, clipped. Coarse; use the Osinski maps for crater-scale geology. Click for unit and era.'},
-   {name:'Hydrothermal vents (80)', layer:ventsLayer, meta:'80 vent and hydrothermal localities digitized from the Osinski et al. 2005 map (UTM 16N shapefile).'}]},
- {grp:'Station & operations',items:[
-   {name:'FMARS habitat & infrastructure', layer:infraLayer, meta:'Station assets from the GPS survey: Hab (house symbol), generator shed, incinerator, windmill, windsock, tripod, cairn, and data logger stations A, B, C. Hover for names, click for UTM coordinates.'},
-   {name:'Field waypoints', layer:fieldLayer, meta:'Field waypoints from the GPS survey: landing strip corners (gold), EVA starts and ends (green), science targets such as samples, outcrops, patterned ground and the stromatolite boulder (purple), track junctions and creek crossings (blue-grey).'},
-   {name:'Previous EVA tracks', layer:tracksLayer, meta:'Crew GPS logs: crater EVA (red dashed) and stream and water EVA (blue dashed), thinned from raw KML activity files.'},
-   {name:'Crew XIX EVA tracks (2026)', layer:crew19Layer, meta:'Crew 19 Tiriganiaq EVA GPS logs, mission July 2026. Three logged tracks (magenta lines), simplified from a raw 585KB KML export for web performance while preserving path shape. Click a track for its logged timestamp.'},
-   {name:'Crew XIX waypoints (2026)', layer:crew19WaypointsLayer, meta:'43 Crew 19 EVA waypoints: sample sites, oases, hydrothermal vent samples, fault observations and traverse markers, compiled from the crew’s mission GPS exports (gold diamonds). Click for notes, log time and elevation.'}]}
+   {name:'Hydrothermal vents (80)', layer:ventsLayer, meta:'80 vent and hydrothermal localities digitized from the Osinski et al. 2005 map (UTM 16N shapefile).'}]}
 ];
 
 const pane=document.getElementById('pane-layers');
