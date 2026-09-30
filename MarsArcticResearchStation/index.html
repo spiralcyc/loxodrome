@@ -468,28 +468,30 @@ const hsProxy={
 
 const LAYERS=[
  {grp:'Base imagery',items:[
-   {name:'Esri satellite', layer:baseEsri, on:true, radio:true, meta:'Esri World Imagery web tiles (online).'},
-   {name:'OpenTopoMap', layer:baseTopo, radio:true, meta:'Topographic web basemap (online).'},
-   {name:'OpenStreetMap', layer:baseOSM, radio:true, meta:'Standard OSM basemap (online).'}]},
+   {key:'esri', name:'Esri satellite', layer:baseEsri, on:true, radio:true, meta:'Esri World Imagery web tiles (online).'},
+   {key:'opentopo', name:'OpenTopoMap', layer:baseTopo, radio:true, meta:'Topographic web basemap (online).'},
+   {key:'osm', name:'OpenStreetMap', layer:baseOSM, radio:true, meta:'Standard OSM basemap (online).'}]},
  {grp:'Station & operations',items:[
-   {name:'FMARS habitat & infrastructure (approx)', layer:infraLayer, meta:'Station assets from the GPS survey: Hab (house symbol), generator shed, incinerator, windmill, windsock, tripod, cairn, and data logger stations A, B, C. Hover for names, click for UTM coordinates.'},
-   {name:'Field waypoints', layer:fieldLayer, meta:'Field waypoints from the GPS survey: landing strip corners (gold), EVA starts and ends (green), science targets such as samples, outcrops, patterned ground and the stromatolite boulder (purple), track junctions and creek crossings (blue-grey).'},
-   {name:'Previous EVA tracks', layer:tracksLayer, meta:'Crew GPS logs: crater EVA (red dashed) and stream and water EVA (blue dashed), thinned from raw KML activity files.'},
-   {name:'Crew XIX EVA tracks (2026)', layer:crew19Layer, meta:'Crew 19 Tiriganiaq EVA GPS logs, mission July 2026. Three logged tracks (magenta lines), simplified from a raw 585KB KML export for web performance while preserving path shape. Click a track for its logged timestamp.'},
-   {name:'Crew XIX waypoints (2026)', layer:crew19WaypointsLayer, meta:'43 Crew 19 EVA waypoints: sample sites, oases, hydrothermal vent samples, fault observations and traverse markers, compiled from the crew’s mission GPS exports (gold diamonds). Click for notes, log time and elevation.'}]},
+   {key:'infra', name:'FMARS habitat & infrastructure (approx)', layer:infraLayer, meta:'Station assets from the GPS survey: Hab (house symbol), generator shed, incinerator, windmill, windsock, tripod, cairn, and data logger stations A, B, C. Hover for names, click for UTM coordinates.'},
+   {key:'field', name:'Field waypoints', layer:fieldLayer, meta:'Field waypoints from the GPS survey: landing strip corners (gold), EVA starts and ends (green), science targets such as samples, outcrops, patterned ground and the stromatolite boulder (purple), track junctions and creek crossings (blue-grey).'},
+   {key:'tracks', name:'Previous EVA tracks', layer:tracksLayer, meta:'Crew GPS logs: crater EVA (red dashed) and stream and water EVA (blue dashed), thinned from raw KML activity files.'},
+   {key:'crew19tracks', name:'Crew XIX EVA tracks (2026)', layer:crew19Layer, meta:'Crew 19 Tiriganiaq EVA GPS logs, mission July 2026. Three logged tracks (magenta lines), simplified from a raw 585KB KML export for web performance while preserving path shape. Click a track for its logged timestamp.'},
+   {key:'crew19wp', name:'Crew XIX waypoints (2026)', layer:crew19WaypointsLayer, meta:'43 Crew 19 EVA waypoints: sample sites, oases, hydrothermal vent samples, fault observations and traverse markers, compiled from the crew’s mission GPS exports (gold diamonds). Click for notes, log time and elevation.'}]},
  {grp:'Terrain (Arctic DEM 2m)',items:[
-   {name:'Hillshade', layer:hsProxy, opac:true, exag:true, meta:'Shaded relief from the Arctic DEM 2m mosaic v4.1 (Polar Geospatial Center), sun az 315 alt 45. Moving the exaggeration slider turns the layer on and re-renders the shading with vertical exaggeration; from top-down this reads as deeper shadows. For tilted views use the 3D button on the map: Explore mode gives orbit, pan and zoom, and Orbit crater spins around the structure.'},
-   {name:'Elevation tint', layer:img('elevtint',0.65), opac:true, meta:'Hypsometric color ramp 0 to 450 m blended with hillshade, from the same Arctic DEM tile.'},
-   {name:'Contours (25 m)', layer:contourLayer, meta:'Generated from smoothed Arctic DEM; index contours every 100 m shown heavier. Labels on hover.'}]},
+   {key:'hillshade', name:'Hillshade', layer:hsProxy, opac:true, exag:true, meta:'Shaded relief from the Arctic DEM 2m mosaic v4.1 (Polar Geospatial Center), sun az 315 alt 45. Moving the exaggeration slider turns the layer on and re-renders the shading with vertical exaggeration; from top-down this reads as deeper shadows. For tilted views use the 3D button on the map: Explore mode gives orbit, pan and zoom, and Orbit crater spins around the structure.'},
+   {key:'elevtint', name:'Elevation tint', layer:img('elevtint',0.65), opac:true, meta:'Hypsometric color ramp 0 to 450 m blended with hillshade, from the same Arctic DEM tile.'},
+   {key:'contours', name:'Contours (25 m)', layer:contourLayer, meta:'Generated from smoothed Arctic DEM; index contours every 100 m shown heavier. Labels on hover.'}]},
  {grp:'Geology: scanned maps',items:[
-   {name:'Osinski 2005 geol. map + vents', layer:img('geo2005',0.75), opac:true, meta:'Georeferenced 1:25K geological map of the Haughton impact structure incl. hydrothermal vent localities (Osinski et al. 2005, MAPS 40).'},
-   {name:'Osinski 2010 simplified map', layer:img('geo2010',0.75), opac:true, meta:'Simplified geological map of the Haughton impact structure (Osinski and Spray, 2010 compilation), georeferenced.'},
-   {name:'FMARS 2007 study sites', layer:img('sites2007',0.8), opac:true, meta:'FMARS 2007 long-duration mission science study-sites overview map (Jon Clarke), georeferenced to UTM 16N.'}]},
+   {key:'geo2005', name:'Osinski 2005 geol. map + vents', layer:img('geo2005',0.75), opac:true, meta:'Georeferenced 1:25K geological map of the Haughton impact structure incl. hydrothermal vent localities (Osinski et al. 2005, MAPS 40).'},
+   {key:'geo2010', name:'Osinski 2010 simplified map', layer:img('geo2010',0.75), opac:true, meta:'Simplified geological map of the Haughton impact structure (Osinski and Spray, 2010 compilation), georeferenced.'},
+   {key:'sites2007', name:'FMARS 2007 study sites', layer:img('sites2007',0.8), opac:true, meta:'FMARS 2007 long-duration mission science study-sites overview map (Jon Clarke), georeferenced to UTM 16N.'}]},
  {grp:'Geology: vector',items:[
-   {name:'Surficial geology (GSC)', layer:surficialLayer, meta:'Surficial geology of western Devon Island (Geological Survey of Canada), clipped to the crater region. Click a polygon for unit label, type and depositional event.'},
-   {name:'Bedrock geology (GSC national)', layer:bedrockLayer, meta:'Bedrock Geology of Canada national compilation, clipped. Coarse; use the Osinski maps for crater-scale geology. Click for unit and era.'},
-   {name:'Hydrothermal vents (80)', layer:ventsLayer, meta:'80 vent and hydrothermal localities digitized from the Osinski et al. 2005 map (UTM 16N shapefile).'}]}
+   {key:'surficial', name:'Surficial geology (GSC)', layer:surficialLayer, meta:'Surficial geology of western Devon Island (Geological Survey of Canada), clipped to the crater region. Click a polygon for unit label, type and depositional event.'},
+   {key:'bedrock', name:'Bedrock geology (GSC national)', layer:bedrockLayer, meta:'Bedrock Geology of Canada national compilation, clipped. Coarse; use the Osinski maps for crater-scale geology. Click for unit and era.'},
+   {key:'vents', name:'Hydrothermal vents (80)', layer:ventsLayer, meta:'80 vent and hydrothermal localities digitized from the Osinski et al. 2005 map (UTM 16N shapefile).'}]}
 ];
+const LAYER_BY_KEY={};
+LAYERS.forEach(g=>g.items.forEach(it=>LAYER_BY_KEY[it.key]=it));
 
 const pane=document.getElementById('pane-layers');
 LAYERS.forEach(g=>{
@@ -497,33 +499,111 @@ LAYERS.forEach(g=>{
   div.innerHTML='<h3>'+g.grp+'</h3>';
   g.items.forEach(it=>{
     const row=document.createElement('div'); row.className='lyr';
-    const id='ly'+Math.random().toString(36).slice(2,8);
+    const id='ly-'+it.key;
     const type=g.items[0].radio?'radio':'checkbox';
     row.innerHTML='<label><input type="'+type+'" '+(g.items[0].radio?'name="base"':'')+' id="'+id+'" '+(it.on?'checked':'')+'>'+it.name+'</label>'+
       (it.opac?'<input type="range" min="0" max="100" value="'+Math.round((it.layer.options.opacity||1)*100)+'" title="opacity">':'')+
       '<button class="info-btn" title="metadata">i</button>';
     const meta=document.createElement('div'); meta.className='meta-box'; meta.textContent=it.meta;
     div.appendChild(row);
+    it.input=row.querySelector('input[type='+type+']');
     if(it.exag){
       hsChk=row.querySelector('input');
       const ex=document.createElement('div'); ex.className='exagrow';
       ex.innerHTML='Exaggeration <input type="range" min="1" max="5" step="0.5" value="1"><span class="val">1x</span>';
       const rng=ex.querySelector('input');
-      rng.addEventListener('input',()=>{ex.querySelector('.val').textContent=rng.value+'x'; setHSExag(parseFloat(rng.value));});
+      it.exInput=rng; it.exValEl=ex.querySelector('.val');
+      rng.addEventListener('input',()=>{ex.querySelector('.val').textContent=rng.value+'x'; setHSExag(parseFloat(rng.value)); updatePermalink();});
       div.appendChild(ex);
     }
     div.appendChild(meta);
     if(it.on) it.layer.addTo(map);
-    row.querySelector('input[type='+type+']').addEventListener('change',e=>{
+    it.input.addEventListener('change',e=>{
       if(g.items[0].radio){ g.items.forEach(o=>map.removeLayer(o.layer)); it.layer.addTo(map); }
       else e.target.checked ? it.layer.addTo(map) : (it.layer.remove?it.layer.remove():map.removeLayer(it.layer));
+      updatePermalink();
     });
     const rng=row.querySelector('input[type=range]');
-    if(rng) rng.addEventListener('input',e=>it.layer.setOpacity(e.target.value/100));
+    it.opInput=rng;
+    if(rng) rng.addEventListener('input',e=>{it.layer.setOpacity(e.target.value/100); updatePermalink();});
     row.querySelector('.info-btn').addEventListener('click',()=>meta.classList.toggle('open'));
   });
   pane.appendChild(div);
 });
+
+/* ================= shareable permalink (view + layer config in URL) ================= */
+function currentPermalinkState(){
+  const c=map.getCenter();
+  const on=[];
+  LAYERS.forEach(g=>{ if(!g.items[0].radio) g.items.forEach(it=>{ if(it.input.checked) on.push(it.key); }); });
+  const baseItem=LAYERS[0].items.find(it=>it.input.checked);
+  const op=[];
+  LAYERS.forEach(g=>g.items.forEach(it=>{ if(it.opInput){ const v=Math.round(it.opInput.value); op.push(it.key+':'+v); } }));
+  const state={z:map.getZoom(), lat:+c.lat.toFixed(5), lng:+c.lng.toFixed(5), base:baseItem?baseItem.key:'esri', on, op};
+  const hsIt=LAYER_BY_KEY.hillshade;
+  if(hsIt && hsIt.exInput) state.ex=parseFloat(hsIt.exInput.value);
+  return state;
+}
+function encodePermalink(s){
+  const parts=['z='+s.z,'c='+s.lat+','+s.lng,'b='+s.base];
+  if(s.on.length) parts.push('l='+s.on.join(','));
+  if(s.op.length) parts.push('o='+s.op.join(','));
+  if(s.ex && s.ex!==1) parts.push('e='+s.ex);
+  return '#'+parts.join('&');
+}
+function parsePermalink(hash){
+  if(!hash || hash.length<2) return null;
+  const out={};
+  hash.slice(1).split('&').forEach(kv=>{
+    const i=kv.indexOf('='); if(i<0) return;
+    const k=kv.slice(0,i), v=decodeURIComponent(kv.slice(i+1));
+    if(k==='z') out.z=parseInt(v,10);
+    else if(k==='c'){ const [la,lo]=v.split(','); out.lat=parseFloat(la); out.lng=parseFloat(lo); }
+    else if(k==='b') out.base=v;
+    else if(k==='l') out.on=v?v.split(','):[];
+    else if(k==='o') out.op=v?v.split(',').map(p=>{const[key,val]=p.split(':');return[key,parseFloat(val)];}):[];
+    else if(k==='e') out.ex=parseFloat(v);
+  });
+  return (out.z!=null && out.lat!=null) ? out : null;
+}
+let permalinkSuspended=false;
+function updatePermalink(){
+  if(permalinkSuspended) return;
+  history.replaceState(null,'',encodePermalink(currentPermalinkState()));
+}
+function applyPermalink(s){
+  permalinkSuspended=true;
+  map.setView([s.lat,s.lng], s.z);
+  if(s.base && LAYER_BY_KEY[s.base]){ LAYER_BY_KEY[s.base].input.checked=true; LAYER_BY_KEY[s.base].input.dispatchEvent(new Event('change')); }
+  if(s.on){
+    const onSet=new Set(s.on);
+    LAYERS.forEach(g=>{ if(!g.items[0].radio) g.items.forEach(it=>{
+      const want=onSet.has(it.key);
+      if(it.input.checked!==want){ it.input.checked=want; it.input.dispatchEvent(new Event('change')); }
+    }); });
+  }
+  if(s.op) s.op.forEach(([key,val])=>{ const it=LAYER_BY_KEY[key]; if(it && it.opInput){ it.opInput.value=val; it.layer.setOpacity(val/100); } });
+  if(s.ex!=null && LAYER_BY_KEY.hillshade && LAYER_BY_KEY.hillshade.exInput){
+    const hsIt=LAYER_BY_KEY.hillshade;
+    hsIt.exInput.value=s.ex; hsIt.exValEl.textContent=s.ex+'x'; setHSExag(s.ex);
+  }
+  permalinkSuspended=false;
+  updatePermalink();
+}
+map.on('moveend zoomend',updatePermalink);
+const initialPermalink=parsePermalink(location.hash);
+if(initialPermalink) applyPermalink(initialPermalink);
+else updatePermalink();
+const copyLinkBtn=document.createElement('button');
+copyLinkBtn.className='btn sm'; copyLinkBtn.id='copyLinkBtn'; copyLinkBtn.textContent='Copy link to this view';
+copyLinkBtn.style.margin='4px 0 10px';
+copyLinkBtn.addEventListener('click',()=>{
+  navigator.clipboard.writeText(location.href).then(()=>{
+    const old=copyLinkBtn.textContent; copyLinkBtn.textContent='Copied!';
+    setTimeout(()=>copyLinkBtn.textContent=old,1500);
+  }).catch(()=>{ prompt('Copy this link:', location.href); });
+});
+pane.insertBefore(copyLinkBtn, pane.firstChild);
 
 /* ---- user traverse / EVA log layers ---- */
 const userGrp=document.createElement('div'); userGrp.className='grp';
