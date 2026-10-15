@@ -15,9 +15,13 @@
 }
 *{box-sizing:border-box; margin:0; padding:0}
 html,body{height:100%; font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--txt)}
-#app{display:flex; height:100%}
-#sidebar{width:352px; min-width:352px; background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:1200}
+#app{display:flex; height:100%; position:relative}
+#sidebar{width:352px; min-width:352px; background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; z-index:1200; transition:width .22s ease, min-width .22s ease}
 #map{flex:1; background:#0b0f1f}
+#sidebarToggle{position:absolute; top:50%; left:352px; transform:translate(-50%,-50%); width:24px; height:44px; background:var(--panel2); border:1px solid var(--line); border-radius:0 8px 8px 0; color:var(--dim); cursor:pointer; z-index:1300; display:flex; align-items:center; justify-content:center; font-size:12px; transition:left .22s ease}
+#sidebarToggle:hover{color:var(--acc); border-color:var(--acc)}
+#app.collapsed #sidebar{width:0; min-width:0; overflow:hidden; border-right:none}
+#app.collapsed #sidebarToggle{left:0; transform:translate(-50%,-50%) rotate(180deg)}
 header{padding:12px 14px 10px; border-bottom:2px solid var(--mag); display:flex; gap:10px; align-items:center}
 header img{width:58px; height:58px; flex-shrink:0; filter:drop-shadow(0 0 6px #0008)}
 header h1{font-size:13.5px; letter-spacing:.4px; color:var(--acc); text-transform:uppercase; line-height:1.35}
@@ -113,7 +117,14 @@ select,input[type=text]{background:var(--panel2); color:var(--txt); border:1px s
 .leaflet-bar a{background:var(--panel); color:var(--txt); border-color:var(--line)}
 .leaflet-bar a:hover{background:var(--panel2)}
 #patchbig{width:150px; float:right; margin:0 0 8px 10px}
-@media(max-width:760px){#app{flex-direction:column}#sidebar{width:100%;min-width:0;height:48%}#measureBox{left:14px}}
+@media(max-width:760px){
+  #app{flex-direction:column}
+  #sidebar{width:100%;min-width:0;height:48%; transition:height .22s ease}
+  #measureBox{left:14px}
+  #sidebarToggle{top:48%; left:50%; transform:translate(-50%,-50%) rotate(90deg)}
+  #app.collapsed #sidebar{height:0; width:100%; min-width:0}
+  #app.collapsed #sidebarToggle{top:0; transform:translate(-50%,-50%) rotate(-90deg)}
+}
 </style>
 </head>
 <body>
@@ -123,7 +134,7 @@ select,input[type=text]{background:var(--panel2); color:var(--txt); border:1px s
     <img src="img/patch.png" alt="FMARS Crew XIX Tiriganiaq patch">
     <div>
       <h1>Mars Arctic Research Station: Regional Geology Toggler &amp; EVA Planner</h1>
-      <div class="sub">Haughton Crater, Devon Island, Nunavut &middot; <b>Crew XIX Tiriganiaq</b></div>
+      <div class="sub">Haughton Crater, Devon Island, Nunavut</div>
     </div>
   </header>
   <div id="tabs">
@@ -233,6 +244,7 @@ select,input[type=text]{background:var(--panel2); color:var(--txt); border:1px s
     </div>
   </div>
 </div>
+<button id="sidebarToggle" title="Hide panel">&#x2039;</button>
 <div id="map"></div>
 <div id="coordbar">-</div>
 <div id="measureBox">
@@ -660,6 +672,12 @@ document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',
   document.querySelectorAll('.tabpane').forEach(x=>x.classList.remove('active'));
   b.classList.add('active'); document.getElementById('pane-'+b.dataset.tab).classList.add('active');
 }));
+
+/* sidebar collapse */
+document.getElementById('sidebarToggle').addEventListener('click',()=>{
+  document.getElementById('app').classList.toggle('collapsed');
+  setTimeout(()=>map.invalidateSize(),230);
+});
 document.getElementById('habCoord').textContent=HAB.lat.toFixed(5)+' N, '+(-HAB.lng).toFixed(5)+' W';
 
 /* ================= crew & vehicles ================= */
