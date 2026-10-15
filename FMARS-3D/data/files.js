@@ -3,5 +3,10 @@ window.SFM_FILES=[
   "data/geom_0.js",
   "data/geom_1.js",
   "data/tex_0.js",
-  "data/tex_1.js"
+  "data/tex_1.js",
+  "data/tex_2.js",
+  "data/tex_3.js",
+  "data/tex_4.js",
+  "data/tex_5.js",
+  "data/tex_6.js"
 ];
